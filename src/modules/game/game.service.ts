@@ -3,7 +3,6 @@ import { In, IsNull, LessThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GamerService } from '../gamer/gamer.service';
 import { Game } from './entity/game.entity';
-import { ChipService } from '../chips/chip.service';
 import { GameOverLogService } from '../game-over-log/game-over-log.service';
 import {
   GAME_DURATION_KEY,
@@ -25,7 +24,6 @@ export class GameService {
   constructor(
     @InjectRepository(Game, 'pg')
     private readonly gameRepo: Repository<Game>,
-    private readonly chipService: ChipService,
     private readonly gamerService: GamerService,
     private readonly gameOverLogService: GameOverLogService,
     private readonly keyValueDataService: KeyValueDataService,
@@ -103,9 +101,7 @@ export class GameService {
     const { gameId } = startGameDto;
     await this.verifyUniquePlayer(gameId, accountId);
 
-    const chipAmount = await this.chipService.getChipAmount();
-
-    await this.gamerService.subtractChips(accountId, chipAmount);
+    await this.gamerService.subtractChips(accountId, 1);
     await this.gamerService.incrementPartyCount(accountId);
     await this.gameRepo.insert({
       gameId,

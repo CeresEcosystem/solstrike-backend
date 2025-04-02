@@ -10,17 +10,6 @@ import {
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Gamer } from './entity/gamer.entity';
 import { GamerRankingDto } from './dto/gamer-ranking-dto';
-import { ethers } from 'ethers';
-import { Keyring } from '@polkadot/keyring';
-import {
-  ASTAR_RPC_URL,
-  DEO_ASTAR_ADDRESS,
-  DEO_ETH_ADDRESS,
-  DEO_XOR_ADDRESS,
-  ETH_RPC_URL,
-} from './gamer.constants';
-import * as deoABI from '../../utils/files/abi.json';
-import { FPNumber } from '@sora-substrate/math';
 import { GamerLog } from './entity/gamer-log.entity';
 import { SoraClient } from '@ceresecosystem/ceres-lib/packages/ceres-backend-common';
 import isValidSignature from 'src/utils/signature.utils';
@@ -29,10 +18,8 @@ import isValidSignature from 'src/utils/signature.utils';
 export class GamerService {
   private readonly logger = new Logger(GamerService.name);
 
-  private readonly gameETHAstarWallet;
-  private readonly contractETH;
-  private readonly contractAstar;
-  private readonly gameSORAWallet;
+  private readonly contractSolana;
+  private readonly gameSolanaWallet;
 
   constructor(
     @InjectDataSource('pg')
@@ -43,36 +30,11 @@ export class GamerService {
     private readonly gamerLogRepo: Repository<GamerLog>,
     private readonly soraClient: SoraClient,
   ) {
-    // Load DEO Arena wallet on SORA
-    const keyring = new Keyring();
-    this.gameSORAWallet = keyring.addFromMnemonic(
-      process.env.GAME_SORA_WALLET,
-      {},
-      'sr25519',
-    );
+    // TODO: Load DEO Arena wallet on Solana
+    this.gameSolanaWallet = undefined;
 
-    // Load DEO Arena wallet on ETH/Astar
-    this.gameETHAstarWallet = ethers.Wallet.fromMnemonic(
-      process.env.GAME_ETH_ASTAR_WALLET,
-    );
-
-    // Initialize connection with Ethereum
-    const ethProvider = new ethers.providers.JsonRpcProvider(ETH_RPC_URL);
-    const ethWalletSigner = this.gameETHAstarWallet.connect(ethProvider);
-    this.contractETH = new ethers.Contract(
-      DEO_ETH_ADDRESS,
-      deoABI,
-      ethWalletSigner,
-    );
-
-    // Initialize connection with Astar
-    const astarProvider = new ethers.providers.JsonRpcProvider(ASTAR_RPC_URL);
-    const astarWalletSigner = this.gameETHAstarWallet.connect(astarProvider);
-    this.contractAstar = new ethers.Contract(
-      DEO_ASTAR_ADDRESS,
-      deoABI,
-      astarWalletSigner,
-    );
+    // TODO: Initialize connection with Solana
+    this.contractSolana = undefined;
   }
 
   public findByAccountIds(accountIds: string[]): Promise<Gamer[]> {
@@ -190,114 +152,6 @@ export class GamerService {
         headshots: 0,
       })
       .execute();
-  }
-
-  public claimBackDEO(
-    accountId: string,
-    deo: string,
-    signature: string,
-    network: string,
-  ): Promise<boolean> {
-    const tokens = parseFloat(deo);
-
-    if (isNaN(tokens)) {
-      return Promise.resolve(false);
-    }
-
-    let isValid = false;
-
-    try {
-      isValid = this.isClaimBackDeoRequestValid(network, signature, accountId);
-    } catch (e) {
-      this.logger.warn(
-        'Exception happened while verifying claim back DEO request',
-        e,
-      );
-    }
-
-    if (!isValid) {
-      return Promise.resolve(false);
-    }
-
-    if (network === 'ASTAR' || network === 'ETHEREUM') {
-      return this.claimBackDeoAstarEth(network, tokens, accountId);
-    }
-
-    if (network === 'SORA') {
-      return this.claimBackDeoSora(accountId, tokens);
-    }
-
-    return Promise.resolve(false);
-  }
-
-  private isClaimBackDeoRequestValid(
-    network: string,
-    signature: string,
-    accountId: string,
-  ): boolean {
-    const message = 'Claim back DEO';
-
-    return isValidSignature(network, signature, message, accountId);
-  }
-
-  private async claimBackDeoAstarEth(
-    network: string,
-    tokens: number,
-    accountId: string,
-  ): Promise<boolean> {
-    const contract =
-      network === 'ASTAR' ? this.contractAstar : this.contractETH;
-    const numberOfTokens = ethers.utils.parseUnits(tokens.toString(), 18);
-
-    const tx = await contract.transfer(accountId, numberOfTokens, {
-      gasLimit: 100000,
-    });
-    const transactionReceipt = await tx.wait();
-    const txStatus = transactionReceipt?.status === 1;
-
-    if (txStatus) {
-      await this.subtractChips(accountId, tokens);
-    }
-
-    return txStatus;
-  }
-
-  private async claimBackDeoSora(
-    accountId: string,
-    tokens: number,
-  ): Promise<boolean> {
-    const soraApi = await this.soraClient.getSoraApi();
-    const extrinsic = soraApi.tx?.assets?.transfer(
-      DEO_XOR_ADDRESS,
-      accountId,
-      FPNumber.fromNatural(tokens).toString(),
-    );
-
-    const tx = new Promise<boolean>(async (resolve) => {
-      const unSub = await extrinsic
-        ?.signAndSend(this.gameSORAWallet, (result) => {
-          if (result?.status?.isFinalized) {
-            if (unSub) {
-              unSub();
-            }
-
-            const failedEvents = result.events.filter(({ event }) =>
-              soraApi.events?.system?.ExtrinsicFailed?.is(event),
-            );
-            resolve(failedEvents.length === 0);
-          }
-        })
-        .catch(() => {
-          resolve(false);
-        });
-    });
-
-    const txStatus = await tx;
-    if (txStatus) {
-      await this.subtractChips(accountId, tokens);
-    }
-
-    return txStatus;
   }
 
   public async useReferralCode(

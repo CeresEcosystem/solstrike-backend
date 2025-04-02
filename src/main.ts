@@ -12,14 +12,6 @@ import {
 
 const DEV_ENV = 'dev';
 
-const INTERCEPTOR_URL_THRESHOLDS = [
-  {
-    url: '/api/demeter',
-    warn: 5000,
-    error: 20000,
-  },
-];
-
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true, // waits for TelegramLogger to be instantiated
@@ -37,7 +29,7 @@ async function bootstrap(): Promise<void> {
 
   app.enableCors();
 
-  app.useGlobalInterceptors(new LoggingInterceptor(INTERCEPTOR_URL_THRESHOLDS));
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   // https://docs.nestjs.com/exception-filters#exception-filters-1
   app.useGlobalFilters(
@@ -66,8 +58,8 @@ async function bootstrap(): Promise<void> {
 
 function buildSwaggerConfig(): Omit<OpenAPIObject, 'paths'> {
   return new DocumentBuilder()
-    .setTitle('Deo Backend')
-    .setVersion('2.0')
+    .setTitle('SolStrike Backend')
+    .setVersion('1.0')
     .addBearerAuth({
       type: 'http',
       in: 'Header',
