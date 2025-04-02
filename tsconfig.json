@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2022",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "strictNullChecks": false, //Goal is to be true
+    "noImplicitAny": false, //Goal is to be true
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true,
+    "allowUnreachableCode": true, //Forbidden in eslint
+    "allowUnusedLabels": false,
+    "exactOptionalPropertyTypes": false, //Goal is to be true, depends on 'strictNullChecks'
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": false, //Forbidden in eslint
+    "noUnusedParameters": false, //Forbidden in eslint
+    "strictPropertyInitialization": false //Goal is to be true, depends on 'strictNullChecks'
+  }
+}

@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: 'mysql:8.0'
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_DATABASE: '${MYSQL_DB_NAME}'
+      MYSQL_ROOT_USER: '${MYSQL_USER}'
+      MYSQL_ROOT_PASSWORD: '${MYSQL_PASSWORD}'
+    volumes:
+      - 'sailmysql:/var/lib/mysql'
+
+  pgsql:
+    image: 'postgres:11.17-bullseye'
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: '${PG_DB_NAME}'
+      POSTGRES_USER: '${PG_USER}'
+      POSTGRES_PASSWORD: '${PG_PASSWORD}'
+    volumes:
+      - 'sailpgsql:/var/lib/pgsql'
+
+volumes:
+  sailmysql:
+    driver: local
+  sailpgsql:
+    driver: local
