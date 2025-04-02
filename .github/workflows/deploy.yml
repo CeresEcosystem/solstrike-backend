@@ -1,0 +1,56 @@
+on:
+  push:
+    branches: [main]
+env:
+  runInfo: ${{ github.run_id }}-${{ github.run_number }}
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      #Get current VM IP
+      - name: Load haythem's public-up action
+        id: ip
+        uses: haythem/public-ip@v1.2
+      - name: Obtaining Public IP
+        run: |
+          echo "Current IP:" ${{ steps.ip.outputs.ipv4 }}
+
+      #Whitelist IP on Hetzner
+      - name: Load Github's checkout action
+        uses: actions/checkout@main
+      - name: Load Hetzner hcloud action
+        uses: 3bit/setup-hcloud@v1
+        with:
+          hcloud-version: '1.30.4'
+      - name: Whitelist obtained Public IP on Hetzner
+        run: |
+          hcloud firewall create --name github-temp-${{ env.runInfo }}
+          hcloud firewall add-rule github-temp-${{ env.runInfo }} --direction in --protocol tcp --port 22 --source-ips ${{ steps.ip.outputs.ipv4 }}/32
+          hcloud firewall apply-to-resource github-temp-${{ env.runInfo }} --type server --server jump-box
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HETZNER_TOKEN }}
+
+      #Production deployment
+      - name: Deploying to the Production environment.
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.JUMP_BOX }}
+          username: root
+          key: ${{ secrets.PRIVATE_KEY }}
+          port: 22
+          debug: true
+          script: |
+            ansible-playbook ansible-recipes/deploy-deo-backend.yml
+          echo: Production deploy finished!
+
+      #Staging goes here...
+
+      #Cleaning up
+      - name: Clean up the IP whitelist
+        if: ${{ always() }}
+        run: |
+          hcloud firewall remove-from-resource github-temp-${{ env.runInfo }} --type server --server jump-box
+          hcloud firewall delete github-temp-${{ env.runInfo }}
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HETZNER_TOKEN }}

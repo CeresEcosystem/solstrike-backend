@@ -1,0 +1,31 @@
+// Legacy Deo Arena support
+/* eslint-disable camelcase */
+import { BaseDtoMapper } from '@ceresecosystem/ceres-lib/packages/ceres-backend-common';
+import { GamerDto } from '../dto/gamer-dto';
+import { Gamer } from '../entity/gamer.entity';
+
+export class GamerToDtoMapper extends BaseDtoMapper<Gamer, GamerDto> {
+  toDto(entity: Gamer): GamerDto {
+    const {
+      username,
+      accountId,
+      referralCode,
+      referralUsed,
+      referralUserId,
+      chips,
+      points,
+      partyCount,
+    } = entity;
+
+    return {
+      username,
+      account_id: accountId,
+      referral_code: referralCode,
+      referral_used: referralUsed,
+      referral_user_id: referralUserId,
+      chips,
+      points,
+      party: partyCount,
+    };
+  }
+}
