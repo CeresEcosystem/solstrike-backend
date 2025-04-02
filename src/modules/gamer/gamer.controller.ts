@@ -7,8 +7,6 @@ import { UpdateGamerDto } from './dto/update-gamer-dto';
 import { AccountIdPipe } from 'src/utils/pipes/account-id.pipe';
 import { GamerRankingDto } from './dto/gamer-ranking-dto';
 import { UseReferralCodeDto } from './dto/use-referral-code-dto';
-import { ClaimBackDeoDto } from './dto/claim-back-deo-dto';
-import { ChipService } from '../chips/chip.service';
 
 @Controller('gamers')
 @ApiTags('Gamers')
@@ -16,7 +14,6 @@ import { ChipService } from '../chips/chip.service';
 export class GamerController {
   constructor(
     private readonly gamerService: GamerService,
-    private readonly chipService: ChipService,
     private readonly mapper: GamerToDtoMapper,
   ) {}
 
@@ -28,14 +25,10 @@ export class GamerController {
   @Get(':accountId')
   public async fetchOrCreate(
     @Param('accountId', AccountIdPipe) accountId: string,
-  ): Promise<{ player: GamerDto; chipPrice: number }> {
+  ): Promise<GamerDto> {
     const gamer = await this.gamerService.fetchOrCreate(accountId);
-    const chipPrice = await this.chipService.getChipAmount();
 
-    return {
-      player: this.mapper.toDto(gamer),
-      chipPrice,
-    };
+    return this.mapper.toDto(gamer);
   }
 
   @Put(':accountId')
@@ -59,19 +52,6 @@ export class GamerController {
       useRefCodeDto.referralCode,
       useRefCodeDto.signature,
       useRefCodeDto.network,
-    );
-  }
-
-  @Post('claim-back-deo/:accountId')
-  public claimBackDEO(
-    @Param('accountId', AccountIdPipe) accountId: string,
-    @Body() claimBackDeoDto: ClaimBackDeoDto,
-  ): Promise<boolean> {
-    return this.gamerService.claimBackDEO(
-      accountId,
-      claimBackDeoDto.deo,
-      claimBackDeoDto.signature,
-      claimBackDeoDto.network,
     );
   }
 }
