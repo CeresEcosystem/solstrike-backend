@@ -28,7 +28,6 @@ export class GamerService {
     private readonly gamerRepo: Repository<Gamer>,
     @InjectRepository(GamerLog, 'pg')
     private readonly gamerLogRepo: Repository<GamerLog>,
-    private readonly soraClient: SoraClient,
   ) {
     // TODO: Load DEO Arena wallet on Solana
     this.gameSolanaWallet = undefined;
@@ -63,13 +62,14 @@ export class GamerService {
     return this.gamerRepo.findOneByOrFail({ accountId });
   }
 
+  // Function that will be called from the listener
   public async addChips(accountId: string, chipsToAdd: number): Promise<void> {
     const gamer = await this.gamerRepo.findOneByOrFail({ accountId });
 
     await this.gamerRepo
       .createQueryBuilder()
       .update()
-      .set({ chips: () => `chips + ${chipsToAdd}` })
+      .set({ reservedChips: () => `chips + ${chipsToAdd}` })
       .where({ id: gamer.id })
       .execute();
   }
@@ -85,14 +85,14 @@ export class GamerService {
         accountId,
       });
 
-      if (gamer.chips < chipsToSubtract) {
+      if (gamer.reservedChips < chipsToSubtract) {
         throw new BadRequestException('Gamer does not have enough chips.');
       }
 
       await gamerManager
         .createQueryBuilder()
         .update()
-        .set({ chips: () => `chips - ${chipsToSubtract}` })
+        .set({ reservedChips: () => `chips - ${chipsToSubtract}` })
         .where({ id: gamer.id })
         .execute();
     });
