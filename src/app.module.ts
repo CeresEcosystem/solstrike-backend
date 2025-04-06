@@ -8,6 +8,7 @@ import { GameModule } from './modules/game/game.module';
 import { NestjsFormDataModule } from 'nestjs-form-data';
 import { SeasonsModule } from './modules/seasons/seasons.module';
 import { TelegramLoggerModule } from '@ceresecosystem/ceres-lib/packages/ceres-backend-common';
+import { ChipsModule } from './modules/chips/chip.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { TelegramLoggerModule } from '@ceresecosystem/ceres-lib/packages/ceres-b
     BlacklistedModule,
     GameModule,
     SeasonsModule,
+    ChipsModule
   ],
   controllers: [],
   providers: [],

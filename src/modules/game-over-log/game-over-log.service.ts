@@ -5,7 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { GameOverLogDto } from './dto/game-over-log.dto';
 import { BurnLogDto } from './dto/burn-log.dto';
 import Big from 'big.js';
-import { ChipService } from '../chips/chip.service';
+import { ChipsService } from '../chips/chip.service';
 import { GamerService } from '../gamer/gamer.service';
 import {
   WINNER_MULTIPLIER,
@@ -31,7 +31,7 @@ export class GameOverLogService {
     private readonly gameOverLogRepo: Repository<GameOverLog>,
     @InjectRepository(GameOverIndividualLog, 'pg')
     private readonly gameOverIndividualLogRepo: Repository<GameOverIndividualLog>,
-    private readonly chipService: ChipService,
+    private readonly chipService: ChipsService,
     private readonly gamerService: GamerService,
   ) {}
 
@@ -112,7 +112,7 @@ export class GameOverLogService {
     playerResults: EndGameResultDto[],
   ): Promise<void> {
     const playerAccountIds = playerResults.map((result) => result.accountId);
-    const chipAmount = await this.chipService.getChipAmount();
+    //const chipAmount = await this.chipService.getChipAmount();
     const gamers = await this.gamerService.findByAccountIds(playerAccountIds);
     const winners = gamers.filter((gamer) =>
       winnerAccountIds.includes(gamer.accountId),
@@ -121,15 +121,15 @@ export class GameOverLogService {
       (gamer) => !winnerAccountIds.includes(gamer.accountId),
     );
 
-    const logs: GameOverLogDto[] = this.buildLogs(
-      gameId,
-      chipAmount,
-      winners,
-      losers,
-      playerResults,
-    );
+    // const logs: GameOverLogDto[] = this.buildLogs(
+    //   gameId,
+    //   //chipAmount,
+    //   winners,
+    //   losers,
+    //   playerResults,
+    // );
 
-    await this.gameOverLogRepo.insert(logs);
+    //await this.gameOverLogRepo.insert(logs);
   }
 
   private buildLogs(

@@ -130,16 +130,21 @@ export class GameService {
     );
   }
 
-  private verifySignature(
+  private async verifySignature(
     network: string,
     signature: string,
     signedMessage: string,
     accountId: string,
-  ): void {
+  ): Promise<void> {
     let isValid = false;
 
     try {
-      isValid = isValidSignature(network, signature, signedMessage, accountId);
+      isValid = await isValidSignature(
+        network,
+        signature,
+        signedMessage,
+        accountId,
+      );
     } catch (e) {
       this.logger.warn(
         'Exception happened while verifying Arena start/end game request',

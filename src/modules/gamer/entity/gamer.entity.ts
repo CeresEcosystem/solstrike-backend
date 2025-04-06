@@ -20,8 +20,8 @@ export class Gamer {
   @Column({ name: 'referral_user_id' })
   referralUserId: number;
 
-  @Column({ type: 'decimal' })
-  chips: number;
+  @Column({ name: 'reserved_chips', type: 'decimal' })
+  reservedChips: number;
 
   @Column({ type: 'decimal' })
   points: number;
