@@ -40,10 +40,10 @@ export class ChipsService implements OnModuleInit {
       const walletAccount = event.user.toBase58();
       const chipAmount = event.amount.toNumber() / Math.pow(10, 9);
 
-      this.gamerService.addChips(walletAccount, chipAmount);
+      this.gamerService.addReservedChips(walletAccount, chipAmount);
 
       this.logger.log(
-        `ReserveChipsEvent: ${event.user.toBase58()} reserved ${event.amount}`,
+        `ReserveChipsEvent: ${event.user.toBase58()} reserved ${chipAmount}`,
       );
     });
   }

@@ -11,7 +11,6 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Gamer } from './entity/gamer.entity';
 import { GamerRankingDto } from './dto/gamer-ranking-dto';
 import { GamerLog } from './entity/gamer-log.entity';
-import { SoraClient } from '@ceresecosystem/ceres-lib/packages/ceres-backend-common';
 import isValidSignature from 'src/utils/signature.utils';
 
 @Injectable()
@@ -62,8 +61,11 @@ export class GamerService {
     return this.gamerRepo.findOneByOrFail({ accountId });
   }
 
-  // Function that will be called from the listener
-  public async addChips(accountId: string, chipsToAdd: number): Promise<void> {
+  public async addReservedChips(
+    accountId: string,
+    chipsToAdd: number,
+  ): Promise<void> {
+    // ako neko prvi put rezervise cip -> vratice ga
     const gamer = await this.gamerRepo.findOneByOrFail({ accountId });
 
     await this.gamerRepo
@@ -166,7 +168,7 @@ export class GamerService {
     try {
       const message = 'Use referral code';
 
-      isValid = isValidSignature(network, signature, message, accountId);
+      isValid = await isValidSignature(network, signature, message, accountId);
     } catch (e) {
       this.logger.warn('Exception happened on use referral code.', e);
     }

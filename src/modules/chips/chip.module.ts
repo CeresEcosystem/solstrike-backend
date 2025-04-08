@@ -9,6 +9,3 @@ import { GamerModule } from '../gamer/gamer.module';
   exports: [ChipsService],
 })
 export class ChipsModule {}
-
-//create-gamers
-//create-gamer-logs

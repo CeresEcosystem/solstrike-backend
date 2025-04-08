@@ -20,6 +20,7 @@ export class Gamer {
   @Column({ name: 'referral_user_id' })
   referralUserId: number;
 
+  // used to be called chips field
   @Column({ name: 'reserved_chips', type: 'decimal' })
   reservedChips: number;
 

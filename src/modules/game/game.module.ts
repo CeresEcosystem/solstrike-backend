@@ -13,6 +13,8 @@ import { GameInProgressValidator } from 'src/utils/validators/game-in-progress.v
 import { PlayerGameValidator } from 'src/utils/validators/player-game.validator';
 import { PlayerGameInProgressValidator } from 'src/utils/validators/player-game-in-progress.validator';
 import { EndGameProcessorService } from './end-game-processor.service';
+import { ConfigModule } from '@nestjs/config';
+import { RewardsDistService } from './rewards-distributions.service';
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { EndGameProcessorService } from './end-game-processor.service';
     GamerModule,
     GameOverLogModule,
     KeyValueDataModule,
+    ConfigModule,
     TypeOrmModule.forFeature([Game], 'pg'),
   ],
   controllers: [GameController],
@@ -31,6 +34,7 @@ import { EndGameProcessorService } from './end-game-processor.service';
     PlayerGameValidator,
     PlayerGameInProgressValidator,
     EndGameProcessorService,
+    RewardsDistService,
   ],
 })
 export class GameModule {}
