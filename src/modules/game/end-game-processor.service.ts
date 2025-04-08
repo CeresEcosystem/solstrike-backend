@@ -6,6 +6,7 @@ import { CronExpression } from '@ceresecosystem/ceres-lib/packages/ceres-backend
 import { Game } from './entity/game.entity';
 import * as crypto from 'crypto';
 import { EndGameResultDto } from './dto/end-game-player-result.dto';
+import { RewardsDistService } from './rewards-distributions.service';
 
 @Injectable()
 export class EndGameProcessorService {
@@ -15,6 +16,7 @@ export class EndGameProcessorService {
   constructor(
     private readonly gameService: GameService,
     private readonly gameOverLogService: GameOverLogService,
+    private readonly rewardsDistService: RewardsDistService,
   ) {}
 
   @Cron(CronExpression.EVERY_10_SECONDS)
@@ -117,8 +119,10 @@ export class EndGameProcessorService {
     const gameResultList = hashedResults.get(topHashedResults[0]);
     this.logger.debug(`Result for game ${gameId}:`, gameResultList);
 
-    const winnerAccountIds = this.findWinners(gameResultList);
+    const winnerAccountIds = this.firstThreeWinners(gameResultList);
     this.logger.debug(`Winner(s) for game ${gameId} are ${winnerAccountIds}`);
+
+    await this.rewardsDistService.distributeRewards(winnerAccountIds);
 
     await this.gameOverLogService.createLogsForGame(
       gameId,
@@ -164,5 +168,21 @@ export class EndGameProcessorService {
     );
 
     return playersWithMaxHeadshots.map((player) => player.accountId);
+  }
+
+  private firstThreeWinners(gameResultList: EndGameResultDto[]): string[] {
+    const threeWinners: string[] = [];
+
+    for (let i = 0; i < 3; i++) {
+      const winner = this.findWinners(gameResultList)[0];
+
+      threeWinners.push(winner);
+
+      const index = gameResultList.findIndex((p) => p.accountId === winner);
+
+      gameResultList.splice(index, 1);
+    }
+
+    return threeWinners;
   }
 }

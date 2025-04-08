@@ -15,10 +15,8 @@ export default function isValidSignature(
   accountId: string,
 ): Promise<boolean> {
   if (network === 'SOLANA') {
-    // this returns a promise
     return isValidSignatureSol(message, signature, accountId);
   }
-  // so this also has to return a promise
   return Promise.resolve(false);
 }
 
@@ -27,7 +25,6 @@ async function isValidSignatureSol(
   signature: string,
   accountId: string,
 ): Promise<boolean> {
-  // string to address typecaster
   const addr = address(accountId);
   const message = getUtf8Encoder().encode(signedMessage);
   const signatureBytes = bs58.decode(signature) as SignatureBytes;
