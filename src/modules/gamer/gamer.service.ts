@@ -12,6 +12,7 @@ import { Gamer } from './entity/gamer.entity';
 import { GamerRankingDto } from './dto/gamer-ranking-dto';
 import { GamerLog } from './entity/gamer-log.entity';
 import isValidSignature from 'src/utils/signature.utils';
+import { EndGameResultDto } from '../game/dto/end-game-player-result.dto';
 
 @Injectable()
 export class GamerService {
@@ -210,5 +211,25 @@ export class GamerService {
     );
 
     return true;
+  }
+
+  //Give points to every gamer in the game based on K/D
+  async distributeGamePoints(gameResultList: EndGameResultDto[]) {
+    const withKD = gameResultList.map((player) => ({
+      ...player,
+      kd: player.deaths === 0 ? player.kills : player.kills / player.deaths,
+    }));
+
+    for (const player of withKD) {
+      const kdPts = player.kd * 10;
+
+      const gamer = await this.gamerRepo.findOneBy({
+        accountId: player.accountId,
+      });
+
+      gamer.points += kdPts;
+
+      await this.gamerRepo.save(gamer);
+    }
   }
 }
