@@ -7,6 +7,7 @@ import { Game } from './entity/game.entity';
 import * as crypto from 'crypto';
 import { EndGameResultDto } from './dto/end-game-player-result.dto';
 import { RewardsDistService } from './rewards-distributions.service';
+import { GamerService } from '../gamer/gamer.service';
 
 @Injectable()
 export class EndGameProcessorService {
@@ -17,6 +18,7 @@ export class EndGameProcessorService {
     private readonly gameService: GameService,
     private readonly gameOverLogService: GameOverLogService,
     private readonly rewardsDistService: RewardsDistService,
+    private readonly gamerService: GamerService,
   ) {}
 
   @Cron(CronExpression.EVERY_10_SECONDS)
@@ -122,6 +124,9 @@ export class EndGameProcessorService {
     const winnerAccountIds = this.firstThreeWinners(gameResultList);
     this.logger.debug(`Winner(s) for game ${gameId} are ${winnerAccountIds}`);
 
+    //Distribute game points (write points to database)
+    await this.gamerService.distributeGamePoints(gameResultList);
+    //Distribute game rewards (call contract fn through rpc)
     await this.rewardsDistService.distributeRewards(winnerAccountIds);
 
     await this.gameOverLogService.createLogsForGame(
