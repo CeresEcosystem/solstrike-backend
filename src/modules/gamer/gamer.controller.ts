@@ -5,7 +5,7 @@ import { GamerToDtoMapper } from './mapper/gamer-to-dto.mapper';
 import { GamerDto } from './dto/gamer-dto';
 import { UpdateGamerDto } from './dto/update-gamer-dto';
 import { AccountIdPipe } from 'src/utils/pipes/account-id.pipe';
-import { GamerRankingDto } from './dto/gamer-ranking-dto';
+import { GamerLeaderboardDto } from './dto/leaderboard.dto';
 import { UseReferralCodeDto } from './dto/use-referral-code-dto';
 
 @Controller('gamers')
@@ -17,11 +17,6 @@ export class GamerController {
     private readonly mapper: GamerToDtoMapper,
   ) {}
 
-  @Get('ranking')
-  public getRanking(): Promise<GamerRankingDto[]> {
-    return this.gamerService.getRanking();
-  }
-
   @Get(':accountId')
   public async fetchOrCreate(
     @Param('accountId', AccountIdPipe) accountId: string,
@@ -29,6 +24,13 @@ export class GamerController {
     const gamer = await this.gamerService.fetchOrCreate(accountId);
 
     return this.mapper.toDto(gamer);
+  }
+
+  @Get(':accountId')
+  public async getLeaderboard(
+    @Param('accountId', AccountIdPipe) accountId: string,
+  ): Promise<GamerLeaderboardDto[]> {
+    return this.gamerService.getLeaderboardPositions(accountId);
   }
 
   @Put(':accountId')

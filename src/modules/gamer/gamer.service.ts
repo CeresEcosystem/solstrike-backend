@@ -13,6 +13,7 @@ import { GamerRankingDto } from './dto/gamer-ranking-dto';
 import { GamerLog } from './entity/gamer-log.entity';
 import isValidSignature from 'src/utils/signature.utils';
 import { EndGameResultDto } from '../game/dto/end-game-player-result.dto';
+import { GamerLeaderboardDto } from './dto/leaderboard.dto';
 
 @Injectable()
 export class GamerService {
@@ -108,6 +109,44 @@ export class GamerService {
       .set({ partyCount: () => 'party + 1' })
       .where({ accountId })
       .execute();
+  }
+
+  // Since points are calculated based on the kill/death ratio,
+  // we don't need to sort separately by kills or deaths.
+  // Only the top 10 players + accountId (with points > 0 and at least one party)
+  // will be included in the results.
+  // Headshots are excluded in v1 as their count is not yet available.
+  public async getLeaderboardPositions(
+    accountId: string,
+  ): Promise<GamerLeaderboardDto[]> {
+    const allGamers = await this.gamerRepo.find({
+      where: { points: MoreThan(0), partyCount: MoreThan(0) },
+      order: {
+        points: 'DESC',
+      },
+    });
+
+    const leaderboard = allGamers.map((gamer, idx) => ({
+      accountId: gamer.accountId,
+      username: gamer.username || gamer.accountId,
+      points: gamer.points,
+      partyCount: gamer.partyCount,
+      kills: gamer.kills,
+      deaths: gamer.deaths,
+      place: idx + 1,
+    }));
+
+    const topTen = leaderboard.slice(0, 10);
+
+    const playerEntry = leaderboard.find((gamer) => {
+      gamer.accountId === accountId;
+    });
+
+    if (!playerEntry || topTen.find((gamer) => gamer.accountId === accountId)) {
+      return topTen;
+    }
+
+    return [...topTen, playerEntry];
   }
 
   public async getRanking(): Promise<GamerRankingDto[]> {
