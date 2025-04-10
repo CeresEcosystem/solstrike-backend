@@ -19,9 +19,6 @@ import { GamerLeaderboardDto } from './dto/leaderboard.dto';
 export class GamerService {
   private readonly logger = new Logger(GamerService.name);
 
-  private readonly contractSolana;
-  private readonly gameSolanaWallet;
-
   constructor(
     @InjectDataSource('pg')
     private readonly dataSource: DataSource,
@@ -29,13 +26,7 @@ export class GamerService {
     private readonly gamerRepo: Repository<Gamer>,
     @InjectRepository(GamerLog, 'pg')
     private readonly gamerLogRepo: Repository<GamerLog>,
-  ) {
-    // TODO: Load DEO Arena wallet on Solana
-    this.gameSolanaWallet = undefined;
-
-    // TODO: Initialize connection with Solana
-    this.contractSolana = undefined;
-  }
+  ) {}
 
   public findByAccountIds(accountIds: string[]): Promise<Gamer[]> {
     return this.gamerRepo.findBy({ accountId: In(accountIds) });
