@@ -15,6 +15,8 @@ export class StartGameDto {
   @IsNotEmpty()
   signedMessage: string;
 
-  @IsNotEmpty()
-  network: string;
+  // @IsNotEmpty()
+  // network: string;
 }
+
+// 4 wallets

@@ -121,7 +121,7 @@ export class EndGameProcessorService {
     const gameResultList = hashedResults.get(topHashedResults[0]);
     this.logger.debug(`Result for game ${gameId}:`, gameResultList);
 
-    const winnerAccountIds = this.firstThreeWinners(gameResultList);
+    const winnerAccountIds = this.winnersSort(gameResultList);
     this.logger.debug(`Winner(s) for game ${gameId} are ${winnerAccountIds}`);
 
     //Distribute game points (write points to database)
@@ -163,7 +163,7 @@ export class EndGameProcessorService {
       return [playersWithMinDeaths[0].accountId];
     }
 
-    // Find winner(s) by max headshots
+    //Find winner(s) by max headshots
     const maxHeadshots = Math.max(
       ...playersWithMinDeaths.map((player) => player.headshots),
     );
@@ -175,19 +175,29 @@ export class EndGameProcessorService {
     return playersWithMaxHeadshots.map((player) => player.accountId);
   }
 
-  private firstThreeWinners(gameResultList: EndGameResultDto[]): string[] {
-    const threeWinners: string[] = [];
+  private winnersSort(gameResultList: EndGameResultDto[]): string[] {
+    const sortedWinners: string[] = [];
 
-    for (let i = 0; i < 3; i++) {
-      const winner = this.findWinners(gameResultList)[0];
+    while (gameResultList.length > 0) {
+      const winners = this.findWinners(gameResultList);
 
-      threeWinners.push(winner);
+      for (const winner of winners) {
+        if (!sortedWinners.includes(winner)) {
+          sortedWinners.push(winner);
+        }
 
-      const index = gameResultList.findIndex((p) => p.accountId === winner);
+        const idx = gameResultList.findIndex((p) => p.accountId === winner);
 
-      gameResultList.splice(index, 1);
+        if (idx !== -1) {
+          gameResultList.splice(idx, 1);
+        }
+      }
+
+      if (sortedWinners.length >= 3) {
+        break;
+      }
     }
 
-    return threeWinners;
+    return sortedWinners.slice(0, 3);
   }
 }

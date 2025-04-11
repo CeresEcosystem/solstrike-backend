@@ -19,9 +19,6 @@ import { GamerLeaderboardDto } from './dto/leaderboard.dto';
 export class GamerService {
   private readonly logger = new Logger(GamerService.name);
 
-  private readonly contractSolana;
-  private readonly gameSolanaWallet;
-
   constructor(
     @InjectDataSource('pg')
     private readonly dataSource: DataSource,
@@ -29,13 +26,7 @@ export class GamerService {
     private readonly gamerRepo: Repository<Gamer>,
     @InjectRepository(GamerLog, 'pg')
     private readonly gamerLogRepo: Repository<GamerLog>,
-  ) {
-    // TODO: Load DEO Arena wallet on Solana
-    this.gameSolanaWallet = undefined;
-
-    // TODO: Initialize connection with Solana
-    this.contractSolana = undefined;
-  }
+  ) {}
 
   public findByAccountIds(accountIds: string[]): Promise<Gamer[]> {
     return this.gamerRepo.findBy({ accountId: In(accountIds) });
@@ -67,13 +58,16 @@ export class GamerService {
     accountId: string,
     chipsToAdd: number,
   ): Promise<void> {
-    // ako neko prvi put rezervise cip -> vratice ga
     const gamer = await this.gamerRepo.findOneByOrFail({ accountId });
+
+    if (gamer.reservedChips === 1) {
+      return;
+    }
 
     await this.gamerRepo
       .createQueryBuilder()
       .update()
-      .set({ reservedChips: () => `chips + ${chipsToAdd}` })
+      .set({ reservedChips: () => `reserved_chips + ${chipsToAdd}` })
       .where({ id: gamer.id })
       .execute();
   }
@@ -113,7 +107,7 @@ export class GamerService {
 
   // Since points are calculated based on the kill/death ratio,
   // we don't need to sort separately by kills or deaths.
-  // Only the top 10 players + accountId (with points > 0 and at least one party)
+  // Only the top 10 players (with points > 0 and at least one party)
   // will be included in the results.
   // Headshots are excluded in v1 as their count is not yet available.
   public async getLeaderboardPositions(
@@ -208,7 +202,7 @@ export class GamerService {
     try {
       const message = 'Use referral code';
 
-      isValid = await isValidSignature(network, signature, message, accountId);
+      isValid = await isValidSignature(signature, message, accountId);
     } catch (e) {
       this.logger.warn('Exception happened on use referral code.', e);
     }
@@ -252,7 +246,6 @@ export class GamerService {
     return true;
   }
 
-  //Give points to every gamer in the game based on K/D
   async distributeGamePoints(gameResultList: EndGameResultDto[]) {
     const withKD = gameResultList.map((player) => ({
       ...player,
@@ -262,13 +255,12 @@ export class GamerService {
     for (const player of withKD) {
       const kdPts = player.kd * 10;
 
-      const gamer = await this.gamerRepo.findOneBy({
-        accountId: player.accountId,
-      });
-
-      gamer.points += kdPts;
-
-      await this.gamerRepo.save(gamer);
+      await this.gamerRepo
+        .createQueryBuilder()
+        .update()
+        .set({ points: () => `points + ${kdPts}` })
+        .where({ accountId: player.accountId })
+        .execute();
     }
   }
 }

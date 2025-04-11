@@ -16,7 +16,7 @@ export default new DataSource({
   username: configService.get('PG_USER'),
   password: configService.get('PG_PASSWORD'),
   database: configService.get('PG_DB_NAME'),
-  entities: [Gamer, GamerLog],
+  entities: [Gamer],
   migrations: ['src/database/pg/migrations/*'],
   migrationsTableName: 'migrations',
 });
