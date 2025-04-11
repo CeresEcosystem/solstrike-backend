@@ -1,47 +1,52 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('gamers')
 export class Gamer {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   username: string;
 
   @Column({ name: 'account_id' })
   accountId: string;
 
-  @Column({ name: 'referral_code' })
+  @Column({ name: 'referral_code', nullable: true })
   referralCode: string;
 
-  @Column({ name: 'referral_used' })
+  @Column({ name: 'referral_used', default: false })
   referralUsed: boolean;
 
-  @Column({ name: 'referral_user_id' })
+  @Column({ name: 'referral_user_id', nullable: true })
   referralUserId: number;
 
-  // used to be called chips field
-  @Column({ name: 'reserved_chips', type: 'decimal' })
+  @Column({ name: 'reserved_chips', type: 'decimal', default: 0 })
   reservedChips: number;
 
-  @Column({ type: 'decimal' })
+  @Column({ type: 'decimal', default: 0 })
   points: number;
 
-  @Column({ name: 'party' })
+  @Column({ name: 'party', default: 0 })
   partyCount: number;
 
-  @Column('integer', { name: 'kills' })
+  @Column('integer', { name: 'kills', default: 0 })
   kills: number;
 
-  @Column('integer', { name: 'deaths' })
+  @Column('integer', { name: 'deaths', default: 0 })
   deaths: number;
 
-  @Column('integer', { name: 'headshots' })
+  @Column('integer', { name: 'headshots', default: 0 })
   headshots: number;
 
-  @Column('timestamp', { name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column('timestamp', { name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

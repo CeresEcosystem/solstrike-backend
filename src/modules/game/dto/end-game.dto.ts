@@ -25,6 +25,6 @@ export class EndGameDto {
   @IsNotEmpty()
   signedMessage: string;
 
-  @IsNotEmpty()
-  network: string;
+  // @IsNotEmpty()
+  // network: string;
 }

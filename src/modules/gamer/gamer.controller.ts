@@ -17,6 +17,10 @@ export class GamerController {
     private readonly mapper: GamerToDtoMapper,
   ) {}
 
+  // This handler attempts to fetch a gamer by accountId.
+  // If the gamer does not exist, a new one is created using only the accountId.
+  // To support this, the Gamers table has been updated to provide default values
+  // for all non-nullable fields such as referrals, kills, deaths, etc.
   @Get(':accountId')
   public async fetchOrCreate(
     @Param('accountId', AccountIdPipe) accountId: string,
