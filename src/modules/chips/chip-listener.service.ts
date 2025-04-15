@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { AnchorProvider, Program, Wallet, Idl } from '@coral-xyz/anchor';
+import { AnchorProvider, Program, Wallet } from '@coral-xyz/anchor';
 import { Connection, Keypair, clusterApiUrl } from '@solana/web3.js';
 import { GamerService } from '../gamer/gamer.service';
 
@@ -9,9 +9,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 @Injectable()
-export class ChipsService implements OnModuleInit {
+export class ChipListenerService implements OnModuleInit {
   private connection: Connection;
-  private readonly logger = new Logger(ChipsService.name);
+  private readonly logger = new Logger(ChipListenerService.name);
 
   constructor(private readonly gamerService: GamerService) {}
 

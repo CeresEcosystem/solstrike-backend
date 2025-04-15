@@ -30,7 +30,7 @@ export class GamerController {
     return this.mapper.toDto(gamer);
   }
 
-  @Get(':accountId')
+  @Get('leaderboard/:accountId')
   public async getLeaderboard(
     @Param('accountId', AccountIdPipe) accountId: string,
   ): Promise<GamerLeaderboardDto[]> {
