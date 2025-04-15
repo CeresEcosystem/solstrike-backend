@@ -103,6 +103,7 @@ export class EndGameProcessorService {
 
     // Get the most common game result
     const maxScore = Math.max(...resultsCounter.values());
+
     const topHashedResults: string[] = [...resultsCounter.entries()]
       .filter(([, counter]) => counter === maxScore)
       .map(([entryHash]) => entryHash);
@@ -119,13 +120,15 @@ export class EndGameProcessorService {
     }
 
     const gameResultList = hashedResults.get(topHashedResults[0]);
+
     this.logger.debug(`Result for game ${gameId}:`, gameResultList);
 
     const winnerAccountIds = this.winnersSort(gameResultList);
+
     this.logger.debug(`Winner(s) for game ${gameId} are ${winnerAccountIds}`);
 
-    //Distribute game points (write points to database)
-    await this.gamerService.distributeGamePoints(gameResultList);
+    await this.gamerService.distributeGameStatsAndPoints(gameResultList);
+
     //Distribute game rewards (call contract fn through rpc)
     await this.rewardsDistService.distributeRewards(winnerAccountIds);
 
@@ -175,7 +178,8 @@ export class EndGameProcessorService {
     return playersWithMaxHeadshots.map((player) => player.accountId);
   }
 
-  private winnersSort(gameResultList: EndGameResultDto[]): string[] {
+  private winnersSort(originalResults: EndGameResultDto[]): string[] {
+    const gameResultList = [...originalResults];
     const sortedWinners: string[] = [];
 
     while (gameResultList.length > 0) {

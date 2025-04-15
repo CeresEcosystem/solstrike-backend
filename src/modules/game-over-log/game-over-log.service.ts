@@ -17,7 +17,7 @@ import { Gamer } from '../gamer/entity/gamer.entity';
 import { GameOverIndividualLog } from './entity/game-over-individual-log.entity';
 import { EndGameResultDto } from '../game/dto/end-game-player-result.dto';
 
-@Injectable() 
+@Injectable()
 export class GameOverLogService {
   constructor(
     @InjectRepository(GameOverLog, 'pg')
@@ -40,7 +40,7 @@ export class GameOverLogService {
           playerAccountId: playerResult.accountId,
           kills: playerResult.kills,
           deaths: playerResult.deaths,
-          headshots: playerResult.deaths,
+          headshots: playerResult.headshots,
           createdAt: new Date(),
         });
       }),
@@ -56,12 +56,19 @@ export class GameOverLogService {
       reporterAccountId,
     });
 
-    return individualGameResults.map((log) => ({
-      accountId: log.playerAccountId,
-      kills: log.kills,
-      deaths: log.deaths,
-      headshots: log.headshots,
-    }));
+    return individualGameResults
+      .map((log) => ({
+        accountId: log.playerAccountId,
+        kills: log.kills,
+        deaths: log.deaths,
+        headshots: log.headshots,
+      }))
+      .sort((a, b) => {
+        if (b.kills !== a.kills) {
+          return b.kills - a.kills;
+        }
+        return a.deaths - b.deaths;
+      });
   }
 
   public async createLogsForGame(

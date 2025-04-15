@@ -1,7 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Connection, Keypair, PublicKey, clusterApiUrl } from '@solana/web3.js';
+import {
+  Connection,
+  Keypair,
+  PublicKey,
+  Transaction,
+  clusterApiUrl,
+} from '@solana/web3.js';
 import { SolStrike } from '../../utils/idl/sol_strike';
 import { ConfigService } from '@nestjs/config';
+import * as anchor from '@coral-xyz/anchor';
 import * as fs from 'fs';
 import * as path from 'path';
 import { AnchorProvider, Wallet, Program } from '@coral-xyz/anchor';
@@ -12,6 +19,7 @@ export class RewardsDistService {
   private connection: Connection;
   private program: Program<SolStrike>;
   private wallet: Wallet;
+  private keypair: Keypair;
   private readonly logger = new Logger(RewardsDistService.name);
 
   constructor(private readonly configService: ConfigService) {
@@ -26,14 +34,9 @@ export class RewardsDistService {
     }
 
     const keypairBytes = Uint8Array.from(JSON.parse(providerBytesRaw));
-    const keypair = Keypair.fromSecretKey(keypairBytes);
+    this.keypair = Keypair.fromSecretKey(keypairBytes);
 
-    this.wallet = {
-      payer: keypair,
-      publicKey: keypair.publicKey,
-      signTransaction: async (tx) => tx,
-      signAllTransactions: async (txs) => txs,
-    };
+    this.wallet = new anchor.Wallet(this.keypair);
 
     const provider = new AnchorProvider(this.connection, this.wallet);
 
@@ -71,11 +74,11 @@ export class RewardsDistService {
       this.program.programId,
     );
 
-    await this.program.methods
+    const distributeRewardsInstructions = await this.program.methods
       .setClaimableRewards()
       .accountsStrict({
         signer: this.wallet.publicKey,
-        program: this.program.provider.publicKey,
+        program: this.program.programId,
         programData: programDataAccount,
         firstPlaceClaimableRewardsAccount: firstPlace,
         firstPlaceAuthority: new PublicKey(accIds[0]),
@@ -85,7 +88,23 @@ export class RewardsDistService {
         thirdPlaceAuthority: new PublicKey(accIds[2]),
         systemProgram: SYSTEM_PROGRAM_ID,
       })
-      .rpc();
+      .instruction();
+
+    const distributeRewardsTransaction = new Transaction().add(
+      distributeRewardsInstructions,
+    );
+
+    distributeRewardsTransaction.feePayer = this.wallet.publicKey;
+
+    distributeRewardsTransaction.recentBlockhash = (
+      await this.connection.getLatestBlockhash()
+    ).blockhash;
+
+    distributeRewardsTransaction.sign(this.keypair);
+
+    await this.connection.sendRawTransaction(
+      distributeRewardsTransaction.serialize(),
+    );
 
     this.logger.log('✅ Rewards distributed!');
   }

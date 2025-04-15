@@ -90,7 +90,7 @@ export class GamerService {
       await gamerManager
         .createQueryBuilder()
         .update()
-        .set({ reservedChips: () => `chips - ${chipsToSubtract}` })
+        .set({ reservedChips: () => `reserved_chips - ${chipsToSubtract}` })
         .where({ id: gamer.id })
         .execute();
     });
@@ -105,11 +105,6 @@ export class GamerService {
       .execute();
   }
 
-  // Since points are calculated based on the kill/death ratio,
-  // we don't need to sort separately by kills or deaths.
-  // Only the top 10 players (with points > 0 and at least one party)
-  // will be included in the results.
-  // Headshots are excluded in v1 as their count is not yet available.
   public async getLeaderboardPositions(
     accountId: string,
   ): Promise<GamerLeaderboardDto[]> {
@@ -246,21 +241,27 @@ export class GamerService {
     return true;
   }
 
-  async distributeGamePoints(gameResultList: EndGameResultDto[]) {
-    const withKD = gameResultList.map((player) => ({
-      ...player,
-      kd: player.deaths === 0 ? player.kills : player.kills / player.deaths,
-    }));
+  async distributeGameStatsAndPoints(
+    gameResultList: EndGameResultDto[],
+  ): Promise<void> {
+    const updates = gameResultList.map((player) => {
+      const kd =
+        player.deaths === 0 ? player.kills : player.kills / player.deaths;
+      const pts = kd * 10;
 
-    for (const player of withKD) {
-      const kdPts = player.kd * 10;
-
-      await this.gamerRepo
+      return this.gamerRepo
         .createQueryBuilder()
         .update()
-        .set({ points: () => `points + ${kdPts}` })
+        .set({
+          points: () => `points + ${pts}`,
+          kills: () => `kills + ${player.kills}`,
+          deaths: () => `deaths + ${player.deaths}`,
+          headshots: () => `headshots + ${player.headshots}`,
+        })
         .where({ accountId: player.accountId })
         .execute();
-    }
+    });
+
+    await Promise.all(updates);
   }
 }
