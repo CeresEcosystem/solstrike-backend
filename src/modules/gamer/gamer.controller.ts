@@ -31,7 +31,7 @@ export class GamerController {
   }
 
   @Get('leaderboard/:accountId')
-  public async getLeaderboard(
+  public getLeaderboard(
     @Param('accountId', AccountIdPipe) accountId: string,
   ): Promise<GamerLeaderboardDto[]> {
     return this.gamerService.getLeaderboardPositions(accountId);
@@ -57,7 +57,6 @@ export class GamerController {
       accountId,
       useRefCodeDto.referralCode,
       useRefCodeDto.signature,
-      useRefCodeDto.network,
     );
   }
 }
