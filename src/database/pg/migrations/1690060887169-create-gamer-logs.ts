@@ -8,7 +8,7 @@ export class CreateGamerLogs1690060887169 implements MigrationInterface {
             season_id BIGINT DEFAULT 0 NOT NULL,
             username character varying(100) DEFAULT NULL::character varying,
             account_id character varying(100) NOT NULL,
-            chips numeric DEFAULT 0,
+            reserved_chips numeric DEFAULT 0,
             referral_code character varying(40) DEFAULT NULL::character NOT NULL,
             referral_used boolean DEFAULT false,
             referral_user_id integer DEFAULT 0,

@@ -9,14 +9,12 @@ import { AccountIdValidator } from 'src/utils/validators/account-id.validator';
 import { GamerLog } from './entity/gamer-log.entity';
 import {
   AuthModule,
-  SoraClientModule,
 } from '@ceresecosystem/ceres-lib/packages/ceres-backend-common';
 
 @Module({
   imports: [
     AuthModule,
     BlacklistedModule,
-    SoraClientModule,
     TypeOrmModule.forFeature([Gamer, GamerLog], 'pg'),
   ],
   controllers: [GamerController],
