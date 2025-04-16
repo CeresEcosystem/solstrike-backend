@@ -11,15 +11,13 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Gamer } from './entity/gamer.entity';
 import { GamerRankingDto } from './dto/gamer-ranking-dto';
 import { GamerLog } from './entity/gamer-log.entity';
-import { SoraClient } from '@ceresecosystem/ceres-lib/packages/ceres-backend-common';
 import isValidSignature from 'src/utils/signature.utils';
+import { EndGameResultDto } from '../game/dto/end-game-player-result.dto';
+import { GamerLeaderboardDto } from './dto/leaderboard.dto';
 
 @Injectable()
 export class GamerService {
   private readonly logger = new Logger(GamerService.name);
-
-  private readonly contractSolana;
-  private readonly gameSolanaWallet;
 
   constructor(
     @InjectDataSource('pg')
@@ -28,14 +26,7 @@ export class GamerService {
     private readonly gamerRepo: Repository<Gamer>,
     @InjectRepository(GamerLog, 'pg')
     private readonly gamerLogRepo: Repository<GamerLog>,
-    private readonly soraClient: SoraClient,
-  ) {
-    // TODO: Load DEO Arena wallet on Solana
-    this.gameSolanaWallet = undefined;
-
-    // TODO: Initialize connection with Solana
-    this.contractSolana = undefined;
-  }
+  ) {}
 
   public findByAccountIds(accountIds: string[]): Promise<Gamer[]> {
     return this.gamerRepo.findBy({ accountId: In(accountIds) });
@@ -63,13 +54,20 @@ export class GamerService {
     return this.gamerRepo.findOneByOrFail({ accountId });
   }
 
-  public async addChips(accountId: string, chipsToAdd: number): Promise<void> {
+  public async addReservedChips(
+    accountId: string,
+    chipsToAdd: number,
+  ): Promise<void> {
     const gamer = await this.gamerRepo.findOneByOrFail({ accountId });
+
+    if (gamer.reservedChips === 1) {
+      return;
+    }
 
     await this.gamerRepo
       .createQueryBuilder()
       .update()
-      .set({ chips: () => `chips + ${chipsToAdd}` })
+      .set({ reservedChips: () => `reserved_chips + ${chipsToAdd}` })
       .where({ id: gamer.id })
       .execute();
   }
@@ -85,14 +83,14 @@ export class GamerService {
         accountId,
       });
 
-      if (gamer.chips < chipsToSubtract) {
+      if (gamer.reservedChips < chipsToSubtract) {
         throw new BadRequestException('Gamer does not have enough chips.');
       }
 
       await gamerManager
         .createQueryBuilder()
         .update()
-        .set({ chips: () => `chips - ${chipsToSubtract}` })
+        .set({ reservedChips: () => `reserved_chips - ${chipsToSubtract}` })
         .where({ id: gamer.id })
         .execute();
     });
@@ -105,6 +103,39 @@ export class GamerService {
       .set({ partyCount: () => 'party + 1' })
       .where({ accountId })
       .execute();
+  }
+
+  public async getLeaderboardPositions(
+    accountId: string,
+  ): Promise<GamerLeaderboardDto[]> {
+    const allGamers = await this.gamerRepo.find({
+      where: { points: MoreThan(0), partyCount: MoreThan(0) },
+      order: {
+        points: 'DESC',
+      },
+    });
+
+    const leaderboard = allGamers.map((gamer, idx) => ({
+      accountId: gamer.accountId,
+      username: gamer.username || gamer.accountId,
+      points: gamer.points,
+      partyCount: gamer.partyCount,
+      kills: gamer.kills,
+      deaths: gamer.deaths,
+      place: idx + 1,
+    }));
+
+    const topTen = leaderboard.slice(0, 10);
+
+    const playerEntry = leaderboard.find((gamer) => {
+      gamer.accountId === accountId;
+    });
+
+    if (!playerEntry || topTen.find((gamer) => gamer.accountId === accountId)) {
+      return topTen;
+    }
+
+    return [...topTen, playerEntry];
   }
 
   public async getRanking(): Promise<GamerRankingDto[]> {
@@ -166,7 +197,7 @@ export class GamerService {
     try {
       const message = 'Use referral code';
 
-      isValid = isValidSignature(network, signature, message, accountId);
+      isValid = await isValidSignature(signature, message, accountId);
     } catch (e) {
       this.logger.warn('Exception happened on use referral code.', e);
     }
@@ -208,5 +239,29 @@ export class GamerService {
     );
 
     return true;
+  }
+
+  async distributeGameStatsAndPoints(
+    gameResultList: EndGameResultDto[],
+  ): Promise<void> {
+    const updates = gameResultList.map((player) => {
+      const kd =
+        player.deaths === 0 ? player.kills : player.kills / player.deaths;
+      const pts = kd * 10;
+
+      return this.gamerRepo
+        .createQueryBuilder()
+        .update()
+        .set({
+          points: () => `points + ${pts}`,
+          kills: () => `kills + ${player.kills}`,
+          deaths: () => `deaths + ${player.deaths}`,
+          headshots: () => `headshots + ${player.headshots}`,
+        })
+        .where({ accountId: player.accountId })
+        .execute();
+    });
+
+    await Promise.all(updates);
   }
 }

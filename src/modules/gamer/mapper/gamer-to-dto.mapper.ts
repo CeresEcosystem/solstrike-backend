@@ -12,7 +12,7 @@ export class GamerToDtoMapper extends BaseDtoMapper<Gamer, GamerDto> {
       referralCode,
       referralUsed,
       referralUserId,
-      chips,
+      reservedChips,
       points,
       partyCount,
     } = entity;
@@ -23,7 +23,7 @@ export class GamerToDtoMapper extends BaseDtoMapper<Gamer, GamerDto> {
       referral_code: referralCode,
       referral_used: referralUsed,
       referral_user_id: referralUserId,
-      chips,
+      reservedChips,
       points,
       party: partyCount,
     };

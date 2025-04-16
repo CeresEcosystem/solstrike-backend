@@ -1,22 +1,33 @@
+import {
+  verifySignature,
+  getUtf8Encoder,
+  getPublicKeyFromAddress,
+  address,
+  SignatureBytes,
+} from '@solana/kit';
+
+import bs58 from 'bs58';
+
 export default function isValidSignature(
-  network: string,
   signature: string,
   message: string,
   accountId: string,
-): boolean {
-  if (network === 'SOLANA') {
-    return isValidSignatureSol(message, signature, accountId);
-  }
-
-  return false;
+): Promise<boolean> {
+  return isValidSignatureSol(message, signature, accountId);
 }
 
-function isValidSignatureSol(
+async function isValidSignatureSol(
   signedMessage: string,
   signature: string,
   accountId: string,
-): boolean {
-  // TODO: Implement this function
+): Promise<boolean> {
+  const addr = address(accountId);
+  const message = getUtf8Encoder().encode(signedMessage);
+  const signatureBytes = bs58.decode(signature) as SignatureBytes;
 
-  throw new Error('Solana signature verification not implemented');
+  const pk = await getPublicKeyFromAddress(addr);
+
+  const verified = await verifySignature(pk, signatureBytes, message);
+
+  return verified;
 }

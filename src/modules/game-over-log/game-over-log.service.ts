@@ -3,9 +3,7 @@ import { GameOverLog, GameOverLogType } from './entity/game-over-log.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GameOverLogDto } from './dto/game-over-log.dto';
-import { BurnLogDto } from './dto/burn-log.dto';
 import Big from 'big.js';
-import { ChipService } from '../chips/chip.service';
 import { GamerService } from '../gamer/gamer.service';
 import {
   WINNER_MULTIPLIER,
@@ -16,11 +14,6 @@ import {
   WINNER_PERC,
 } from './game-over-log.constants';
 import { Gamer } from '../gamer/entity/gamer.entity';
-import {
-  PageDto,
-  PageMetaDto,
-  PageOptionsDto,
-} from '@ceresecosystem/ceres-lib/packages/ceres-backend-common';
 import { GameOverIndividualLog } from './entity/game-over-individual-log.entity';
 import { EndGameResultDto } from '../game/dto/end-game-player-result.dto';
 
@@ -31,43 +24,8 @@ export class GameOverLogService {
     private readonly gameOverLogRepo: Repository<GameOverLog>,
     @InjectRepository(GameOverIndividualLog, 'pg')
     private readonly gameOverIndividualLogRepo: Repository<GameOverIndividualLog>,
-    private readonly chipService: ChipService,
     private readonly gamerService: GamerService,
   ) {}
-
-  public async getTotalChipsByType(type: GameOverLogType): Promise<number> {
-    const { total } = await this.gameOverLogRepo
-      .createQueryBuilder()
-      .select('SUM(game_chips)', 'total')
-      .where({ type })
-      .getRawOne<{ total: string }>();
-
-    return Number(total);
-  }
-
-  public async getByType(
-    type: GameOverLogType,
-    pageOptions: PageOptionsDto,
-  ): Promise<PageDto<GameOverLog>> {
-    const [data, totalCount] = await this.gameOverLogRepo.findAndCount({
-      skip: pageOptions.skip,
-      take: pageOptions.size,
-      where: { type },
-      order: { createdAt: 'DESC' },
-    });
-
-    const pageMeta = new PageMetaDto(
-      pageOptions.page,
-      pageOptions.size,
-      totalCount,
-    );
-
-    return new PageDto(data, pageMeta);
-  }
-
-  public async insertBurnLog(burnLog: BurnLogDto): Promise<void> {
-    await this.gameOverLogRepo.insert({ ...burnLog, type: 'burn' });
-  }
 
   public async insertIndividualLogs(
     gameId: string,
@@ -82,7 +40,7 @@ export class GameOverLogService {
           playerAccountId: playerResult.accountId,
           kills: playerResult.kills,
           deaths: playerResult.deaths,
-          headshots: playerResult.deaths,
+          headshots: playerResult.headshots,
           createdAt: new Date(),
         });
       }),
@@ -98,12 +56,19 @@ export class GameOverLogService {
       reporterAccountId,
     });
 
-    return individualGameResults.map((log) => ({
-      accountId: log.playerAccountId,
-      kills: log.kills,
-      deaths: log.deaths,
-      headshots: log.headshots,
-    }));
+    return individualGameResults
+      .map((log) => ({
+        accountId: log.playerAccountId,
+        kills: log.kills,
+        deaths: log.deaths,
+        headshots: log.headshots,
+      }))
+      .sort((a, b) => {
+        if (b.kills !== a.kills) {
+          return b.kills - a.kills;
+        }
+        return a.deaths - b.deaths;
+      });
   }
 
   public async createLogsForGame(
@@ -112,7 +77,6 @@ export class GameOverLogService {
     playerResults: EndGameResultDto[],
   ): Promise<void> {
     const playerAccountIds = playerResults.map((result) => result.accountId);
-    const chipAmount = await this.chipService.getChipAmount();
     const gamers = await this.gamerService.findByAccountIds(playerAccountIds);
     const winners = gamers.filter((gamer) =>
       winnerAccountIds.includes(gamer.accountId),
@@ -123,7 +87,6 @@ export class GameOverLogService {
 
     const logs: GameOverLogDto[] = this.buildLogs(
       gameId,
-      chipAmount,
       winners,
       losers,
       playerResults,
@@ -134,14 +97,13 @@ export class GameOverLogService {
 
   private buildLogs(
     gameId: string,
-    chipAmount: number,
     winners: Gamer[],
     losers: Gamer[],
     playerResults: EndGameResultDto[],
   ): GameOverLogDto[] {
     const winnersCount = winners.length;
     const gamersCount = winners.length + losers.length;
-    const chipsInGame = new Big(chipAmount).mul(gamersCount).toNumber();
+    const chipsInGame = gamersCount;
     const logs: GameOverLogDto[] = [];
 
     logs.push(
@@ -173,10 +135,6 @@ export class GameOverLogService {
         winnersCount,
         playerResults,
       ),
-    );
-
-    logs.push(
-      this.buildBurnLog(logs, gameId, gamersCount, chipAmount, winnersCount),
     );
 
     return logs;
@@ -276,39 +234,5 @@ export class GameOverLogService {
         headshots: playerResult.headshots,
       };
     });
-  }
-
-  private buildBurnLog(
-    logs: GameOverLogDto[],
-    gameId: string,
-    gamersCount: number,
-    chipAmount: number,
-    winnersCount: number,
-  ): GameOverLogDto {
-    const totalPercSum = logs
-      .map((log) => log.totalPerc)
-      .reduce((sum, totalPerc) => new Big(sum).add(totalPerc).toNumber(), 0);
-    const burnPercent = new Big(100).minus(totalPercSum).toNumber();
-    const burnChips = new Big(gamersCount)
-      .mul(chipAmount)
-      .mul(burnPercent)
-      .div(100)
-      .toNumber();
-
-    return {
-      gameId,
-      type: 'burn',
-      typeId: 0,
-      userId: 0,
-      gameChips: burnChips,
-      perc: burnPercent,
-      totalPerc: burnPercent,
-      gamersCount,
-      winnersCount,
-      points: 0,
-      kills: 0,
-      deaths: 0,
-      headshots: 0,
-    };
   }
 }

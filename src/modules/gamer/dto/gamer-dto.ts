@@ -5,7 +5,7 @@ export interface GamerDto {
   referral_code: string;
   referral_used: boolean;
   referral_user_id: number;
-  chips: number;
+  reservedChips: number;
   points: number;
   party: number;
 }

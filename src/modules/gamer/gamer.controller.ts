@@ -5,7 +5,7 @@ import { GamerToDtoMapper } from './mapper/gamer-to-dto.mapper';
 import { GamerDto } from './dto/gamer-dto';
 import { UpdateGamerDto } from './dto/update-gamer-dto';
 import { AccountIdPipe } from 'src/utils/pipes/account-id.pipe';
-import { GamerRankingDto } from './dto/gamer-ranking-dto';
+import { GamerLeaderboardDto } from './dto/leaderboard.dto';
 import { UseReferralCodeDto } from './dto/use-referral-code-dto';
 
 @Controller('gamers')
@@ -17,11 +17,10 @@ export class GamerController {
     private readonly mapper: GamerToDtoMapper,
   ) {}
 
-  @Get('ranking')
-  public getRanking(): Promise<GamerRankingDto[]> {
-    return this.gamerService.getRanking();
-  }
-
+  // This handler attempts to fetch a gamer by accountId.
+  // If the gamer does not exist, a new one is created using only the accountId.
+  // To support this, the Gamers table has been updated to provide default values
+  // for all non-nullable fields such as referrals, kills, deaths, etc.
   @Get(':accountId')
   public async fetchOrCreate(
     @Param('accountId', AccountIdPipe) accountId: string,
@@ -29,6 +28,13 @@ export class GamerController {
     const gamer = await this.gamerService.fetchOrCreate(accountId);
 
     return this.mapper.toDto(gamer);
+  }
+
+  @Get('leaderboard/:accountId')
+  public async getLeaderboard(
+    @Param('accountId', AccountIdPipe) accountId: string,
+  ): Promise<GamerLeaderboardDto[]> {
+    return this.gamerService.getLeaderboardPositions(accountId);
   }
 
   @Put(':accountId')
