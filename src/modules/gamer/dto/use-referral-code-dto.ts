@@ -6,7 +6,4 @@ export class UseReferralCodeDto {
 
   @IsNotEmpty()
   signature: string;
-
-  @IsNotEmpty()
-  network: string;
 }

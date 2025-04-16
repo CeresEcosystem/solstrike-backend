@@ -127,9 +127,9 @@ export class GamerService {
 
     const topTen = leaderboard.slice(0, 10);
 
-    const playerEntry = leaderboard.find((gamer) => {
-      gamer.accountId === accountId;
-    });
+    const playerEntry = leaderboard.find(
+      (gamer) => gamer.accountId === accountId,
+    );
 
     if (!playerEntry || topTen.find((gamer) => gamer.accountId === accountId)) {
       return topTen;
@@ -189,7 +189,6 @@ export class GamerService {
     accountId: string,
     referralCode: string,
     signature: string,
-    network: string,
   ): Promise<boolean> {
     let referralUsed = false;
     let isValid = false;
