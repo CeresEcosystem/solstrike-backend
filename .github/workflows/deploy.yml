@@ -19,7 +19,7 @@ jobs:
       - name: Load Github's checkout action
         uses: actions/checkout@main
       - name: Load Hetzner hcloud action
-        uses: 3bit/setup-hcloud@v1
+        uses: hetznercloud/setup-hcloud@v1
         with:
           hcloud-version: '1.30.4'
       - name: Whitelist obtained Public IP on Hetzner
