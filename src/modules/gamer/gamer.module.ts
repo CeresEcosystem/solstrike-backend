@@ -7,16 +7,12 @@ import { GamerToDtoMapper } from './mapper/gamer-to-dto.mapper';
 import { BlacklistedModule } from '../blacklisted/blacklisted.module';
 import { AccountIdValidator } from 'src/utils/validators/account-id.validator';
 import { GamerLog } from './entity/gamer-log.entity';
-import {
-  AuthModule,
-  SoraClientModule,
-} from '@ceresecosystem/ceres-lib/packages/ceres-backend-common';
+import { AuthModule } from '@ceresecosystem/ceres-lib/packages/ceres-backend-common';
 
 @Module({
   imports: [
     AuthModule,
     BlacklistedModule,
-    SoraClientModule,
     TypeOrmModule.forFeature([Gamer, GamerLog], 'pg'),
   ],
   controllers: [GamerController],

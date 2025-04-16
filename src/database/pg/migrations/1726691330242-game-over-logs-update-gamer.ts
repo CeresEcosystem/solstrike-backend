@@ -10,9 +10,8 @@ export class CreateUpdateGamerOnGameOverLogFunction1726691330242
           LANGUAGE plpgsql
         AS $function$
         BEGIN
-          update gamers
-          set chips = chips + new.game_chips, 
-              points = points + new.points, 
+          update gamers 
+          set points = points + new.points, 
               kills = kills + new.kills,
               deaths = deaths + new.deaths,
               headshots = headshots + new.headshots
