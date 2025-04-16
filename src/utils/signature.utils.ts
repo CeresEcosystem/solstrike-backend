@@ -30,6 +30,4 @@ async function isValidSignatureSol(
   const verified = await verifySignature(pk, signatureBytes, message);
 
   return verified;
-
-  throw new Error('Solana signature verification not implemented');
 }

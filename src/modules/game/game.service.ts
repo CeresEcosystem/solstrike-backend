@@ -96,7 +96,7 @@ export class GameService {
 
   public async startGame(startGameDto: StartGameDto): Promise<void> {
     const { accountId, signature, signedMessage } = startGameDto;
-    this.verifySignature(signature, signedMessage, accountId);
+    await this.verifySignature(signature, signedMessage, accountId);
 
     const { gameId } = startGameDto;
     await this.verifyUniquePlayer(gameId, accountId);
