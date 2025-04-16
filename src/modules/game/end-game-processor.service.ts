@@ -6,6 +6,8 @@ import { CronExpression } from '@ceresecosystem/ceres-lib/packages/ceres-backend
 import { Game } from './entity/game.entity';
 import * as crypto from 'crypto';
 import { EndGameResultDto } from './dto/end-game-player-result.dto';
+import { RewardsDistService } from './rewards-distributions.service';
+import { GamerService } from '../gamer/gamer.service';
 
 @Injectable()
 export class EndGameProcessorService {
@@ -15,6 +17,8 @@ export class EndGameProcessorService {
   constructor(
     private readonly gameService: GameService,
     private readonly gameOverLogService: GameOverLogService,
+    private readonly rewardsDistService: RewardsDistService,
+    private readonly gamerService: GamerService,
   ) {}
 
   @Cron(CronExpression.EVERY_10_SECONDS)
@@ -99,6 +103,7 @@ export class EndGameProcessorService {
 
     // Get the most common game result
     const maxScore = Math.max(...resultsCounter.values());
+
     const topHashedResults: string[] = [...resultsCounter.entries()]
       .filter(([, counter]) => counter === maxScore)
       .map(([entryHash]) => entryHash);
@@ -115,10 +120,17 @@ export class EndGameProcessorService {
     }
 
     const gameResultList = hashedResults.get(topHashedResults[0]);
+
     this.logger.debug(`Result for game ${gameId}:`, gameResultList);
 
-    const winnerAccountIds = this.findWinners(gameResultList);
+    const winnerAccountIds = this.winnersSort(gameResultList);
+
     this.logger.debug(`Winner(s) for game ${gameId} are ${winnerAccountIds}`);
+
+    await this.gamerService.distributeGameStatsAndPoints(gameResultList);
+
+    //Distribute game rewards (call contract fn through rpc)
+    await this.rewardsDistService.distributeRewards(winnerAccountIds);
 
     await this.gameOverLogService.createLogsForGame(
       gameId,
@@ -154,7 +166,7 @@ export class EndGameProcessorService {
       return [playersWithMinDeaths[0].accountId];
     }
 
-    // Find winner(s) by max headshots
+    //Find winner(s) by max headshots
     const maxHeadshots = Math.max(
       ...playersWithMinDeaths.map((player) => player.headshots),
     );
@@ -164,5 +176,32 @@ export class EndGameProcessorService {
     );
 
     return playersWithMaxHeadshots.map((player) => player.accountId);
+  }
+
+  private winnersSort(originalResults: EndGameResultDto[]): string[] {
+    const gameResultList = [...originalResults];
+    const sortedWinners: string[] = [];
+
+    while (gameResultList.length > 0) {
+      const winners = this.findWinners(gameResultList);
+
+      for (const winner of winners) {
+        if (!sortedWinners.includes(winner)) {
+          sortedWinners.push(winner);
+        }
+
+        const idx = gameResultList.findIndex((p) => p.accountId === winner);
+
+        if (idx !== -1) {
+          gameResultList.splice(idx, 1);
+        }
+      }
+
+      if (sortedWinners.length >= 3) {
+        break;
+      }
+    }
+
+    return sortedWinners.slice(0, 3);
   }
 }

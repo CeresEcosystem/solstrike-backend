@@ -95,8 +95,8 @@ export class GameService {
   }
 
   public async startGame(startGameDto: StartGameDto): Promise<void> {
-    const { accountId, signature, signedMessage, network } = startGameDto;
-    this.verifySignature(network, signature, signedMessage, accountId);
+    const { accountId, signature, signedMessage } = startGameDto;
+    await this.verifySignature(signature, signedMessage, accountId);
 
     const { gameId } = startGameDto;
     await this.verifyUniquePlayer(gameId, accountId);
@@ -112,8 +112,8 @@ export class GameService {
   }
 
   public async endGame(endGameDto: EndGameDto): Promise<void> {
-    const { accountId, signature, signedMessage, network } = endGameDto;
-    this.verifySignature(network, signature, signedMessage, accountId);
+    const { accountId, signature, signedMessage } = endGameDto;
+    this.verifySignature(signature, signedMessage, accountId);
 
     const { gameId, playerResults } = endGameDto;
     this.validateEndGameRequest(playerResults.map((res) => res.accountId));
@@ -130,16 +130,15 @@ export class GameService {
     );
   }
 
-  private verifySignature(
-    network: string,
+  private async verifySignature(
     signature: string,
     signedMessage: string,
     accountId: string,
-  ): void {
+  ): Promise<void> {
     let isValid = false;
 
     try {
-      isValid = isValidSignature(network, signature, signedMessage, accountId);
+      isValid = await isValidSignature(signature, signedMessage, accountId);
     } catch (e) {
       this.logger.warn(
         'Exception happened while verifying Arena start/end game request',
