@@ -29,5 +29,24 @@ async function isValidSignatureSol(
 
   const verified = await verifySignature(pk, signatureBytes, message);
 
-  return verified;
+  if (!verified) {
+    return false;
+  }
+
+  if (!isValidTimestamp(signedMessage)) {
+    return false;
+  }
+
+  return true;
+}
+
+function isValidTimestamp(
+  signedMessage: string,
+  maxAgeSeconds = 4 * 60 * 60,
+): boolean {
+  const timestampString = signedMessage.split(' - ').pop();
+  const timestamp = Number(timestampString);
+  const currentUnixTime = Math.floor(Date.now() / 1000);
+
+  return timestamp >= currentUnixTime - maxAgeSeconds;
 }
