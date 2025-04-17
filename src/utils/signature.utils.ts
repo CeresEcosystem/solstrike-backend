@@ -29,11 +29,7 @@ async function isValidSignatureSol(
 
   const verified = await verifySignature(pk, signatureBytes, message);
 
-  if (!verified) {
-    return false;
-  }
-
-  if (!isValidTimestamp(signedMessage)) {
+  if (!verified || !isValidTimestamp(signedMessage)) {
     return false;
   }
 
