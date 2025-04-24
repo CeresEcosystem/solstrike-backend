@@ -102,7 +102,6 @@ export class GameService {
     await this.verifyUniquePlayer(gameId, accountId);
 
     await this.gamerService.subtractChips(accountId, 1);
-    await this.gamerService.incrementPartyCount(accountId);
     await this.gameRepo.insert({
       gameId,
       accountId,

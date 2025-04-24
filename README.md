@@ -1,4 +1,4 @@
-# Deo Backend
+# Sol Strike Backend
 
 ## Installation
 

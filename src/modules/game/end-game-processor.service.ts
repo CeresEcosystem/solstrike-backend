@@ -121,6 +121,10 @@ export class EndGameProcessorService {
 
     const gameResultList = hashedResults.get(topHashedResults[0]);
 
+    for (const player of gameResultList) {
+      await this.gamerService.incrementPartyCount(player.accountId);
+    }
+
     this.logger.debug(`Result for game ${gameId}:`, gameResultList);
 
     const winnerAccountIds = this.winnersSort(gameResultList);
