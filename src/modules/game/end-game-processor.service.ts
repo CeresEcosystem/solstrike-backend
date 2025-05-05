@@ -65,8 +65,6 @@ export class EndGameProcessorService {
       return;
     }
 
-    this.logger.debug(`Processing game ${gameId}...`);
-
     const individualGameResults = (
       await Promise.all(
         gameParties.map((gameParty) =>
@@ -79,12 +77,14 @@ export class EndGameProcessorService {
     ).filter((results) => results.length > 0);
 
     if (individualGameResults.length === 0) {
-      this.logger.warn(
-        `There are no individual results for game ${gameId}, skipping...`,
-      );
+      // this.logger.warn(
+      //   `There are no individual results for game ${gameId}, skipping...`,
+      // );
 
       return;
     }
+
+    this.logger.debug(`Processing game ${gameId}...`);
 
     // Hash results for easier management
     const hashedResults = new Map<string, EndGameResultDto[]>();
