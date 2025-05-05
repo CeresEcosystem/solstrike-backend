@@ -21,15 +21,15 @@ export class EndGameProcessorService {
     private readonly gamerService: GamerService,
   ) {}
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_SECOND)
   public async runProcessor(): Promise<void> {
-    this.logger.debug('Running end game processor.');
-
     if (this.isRunning) {
       this.logger.log('End game processor is already running, skipping.');
 
       return;
     }
+
+    // this.logger.debug('Running end game processor.');
 
     this.isRunning = true;
 
@@ -41,15 +41,15 @@ export class EndGameProcessorService {
       this.isRunning = false;
     }
 
-    this.logger.debug('End game processor finished.');
+    // this.logger.debug('End game processor finished.');
   }
 
   private async processFinishedGames(): Promise<void> {
     const gamesToProcess = await this.gameService.getFinishedGames();
 
-    gamesToProcess.forEach((gameParties, gameId) =>
-      this.processGameResults(gameId, gameParties),
-    );
+    for (const [gameId, gameParties] of gamesToProcess.entries()) {
+      await this.processGameResults(gameId, gameParties);
+    }
   }
 
   // eslint-disable-next-line max-lines-per-function
@@ -58,12 +58,14 @@ export class EndGameProcessorService {
     gameParties: Game[],
   ): Promise<void> {
     if (gameParties.length < 2) {
-      this.logger.debug(
-        `Only one player signed up for game ${gameId}, skipping...`,
-      );
+      // this.logger.debug(
+      //   `Only one player signed up for game ${gameId}, skipping...`,
+      // );
 
       return;
     }
+
+    this.logger.debug(`Processing game ${gameId}...`);
 
     const individualGameResults = (
       await Promise.all(
@@ -128,17 +130,15 @@ export class EndGameProcessorService {
     this.logger.debug(`Winner(s) for game ${gameId} are ${winnerAccountIds}`);
 
     await this.gamerService.distributeGameStatsAndPoints(gameResultList);
-
-    //Distribute game rewards (call contract fn through rpc)
-    await this.rewardsDistService.distributeRewards(winnerAccountIds);
-
     await this.gameOverLogService.createLogsForGame(
       gameId,
       winnerAccountIds,
       gameResultList,
     );
-
     await this.gameService.resolveGameProcessing(gameId);
+
+    // Distribute game rewards (call contract fn through rpc)
+    await this.rewardsDistService.distributeRewards(winnerAccountIds);
   }
 
   private findWinners(gameResultList: EndGameResultDto[]): string[] {
@@ -166,7 +166,7 @@ export class EndGameProcessorService {
       return [playersWithMinDeaths[0].accountId];
     }
 
-    //Find winner(s) by max headshots
+    // Find winner(s) by max headshots
     const maxHeadshots = Math.max(
       ...playersWithMinDeaths.map((player) => player.headshots),
     );
