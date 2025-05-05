@@ -129,16 +129,34 @@ export class EndGameProcessorService {
 
     this.logger.debug(`Winner(s) for game ${gameId} are ${winnerAccountIds}`);
 
+    this.logger.debug(
+      `Game Stats and Points for game ${gameId} distribution started`,
+    );
+
     await this.gamerService.distributeGameStatsAndPoints(gameResultList);
+
+    this.logger.debug(
+      `Game Stats and Points for game ${gameId} distribution finished`,
+    );
+
     await this.gameOverLogService.createLogsForGame(
       gameId,
       winnerAccountIds,
       gameResultList,
     );
+
     await this.gameService.resolveGameProcessing(gameId);
+
+    this.logger.debug(
+      `On-chain Reward distribution for game ${gameId} started`,
+    );
 
     // Distribute game rewards (call contract fn through rpc)
     await this.rewardsDistService.distributeRewards(winnerAccountIds);
+
+    this.logger.debug(
+      `On-chain Reward distribution for game ${gameId} finished`,
+    );
   }
 
   private findWinners(gameResultList: EndGameResultDto[]): string[] {
