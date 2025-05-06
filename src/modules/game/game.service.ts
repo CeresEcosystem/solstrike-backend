@@ -1,18 +1,10 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { In, IsNull, LessThan, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GamerService } from '../gamer/gamer.service';
 import { Game } from './entity/game.entity';
 import { GameOverLogService } from '../game-over-log/game-over-log.service';
-import {
-  GAME_DURATION_KEY,
-  GAME_FINISHED_SECONDS_BUFFER,
-} from './game.constants';
-import { KeyValueDataService } from '../key-value-data/key-value-data.service';
-import {
-  hasDuplicates,
-  subtractMinutes,
-} from '@ceresecosystem/ceres-lib/packages/ceres-backend-common';
+import { hasDuplicates } from '@ceresecosystem/ceres-lib/packages/ceres-backend-common';
 import { StartGameDto } from './dto/start-game.dto';
 import isValidSignature from 'src/utils/signature.utils';
 import { EndGameDto } from './dto/end-game.dto';
@@ -26,16 +18,7 @@ export class GameService {
     private readonly gameRepo: Repository<Game>,
     private readonly gamerService: GamerService,
     private readonly gameOverLogService: GameOverLogService,
-    private readonly keyValueDataService: KeyValueDataService,
   ) {}
-
-  public getGameDuration(): Promise<number> {
-    return this.keyValueDataService.getValue(GAME_DURATION_KEY);
-  }
-
-  public setGameDuration(duration: number): Promise<void> {
-    return this.keyValueDataService.setValue(GAME_DURATION_KEY, duration);
-  }
 
   public isPlayerInGame(gameId: string, accountId: string): Promise<boolean> {
     return this.gameRepo.exists({
@@ -53,13 +36,7 @@ export class GameService {
   }
 
   public async getFinishedGames(): Promise<Map<string, Game[]>> {
-    const startTime = this.subSeconds(
-      subtractMinutes(new Date(), await this.getGameDuration()),
-      GAME_FINISHED_SECONDS_BUFFER,
-    );
-
     const gameParties = await this.gameRepo.findBy({
-      createdAt: LessThan(startTime),
       resultsProcessed: false,
     });
 

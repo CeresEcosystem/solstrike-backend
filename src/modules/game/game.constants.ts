@@ -1,2 +1,0 @@
-export const GAME_DURATION_KEY = 'GAME_DURATION';
-export const GAME_FINISHED_SECONDS_BUFFER = 1;
