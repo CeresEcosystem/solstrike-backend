@@ -113,7 +113,7 @@ export class GameService {
 
   public async endGame(endGameDto: EndGameDto): Promise<void> {
     const { accountId, signature, signedMessage } = endGameDto;
-    this.verifySignature(signature, signedMessage, accountId);
+    await this.verifySignature(signature, signedMessage, accountId);
 
     const { gameId, playerResults } = endGameDto;
     this.validateEndGameRequest(playerResults.map((res) => res.accountId));

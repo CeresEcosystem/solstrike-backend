@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { GameOverLog, GameOverLogType } from './entity/game-over-log.entity';
+import { GameOverLog } from './entity/game-over-log.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GameOverLogDto } from './dto/game-over-log.dto';
@@ -67,6 +67,7 @@ export class GameOverLogService {
         if (b.kills !== a.kills) {
           return b.kills - a.kills;
         }
+
         return a.deaths - b.deaths;
       });
   }
