@@ -8,7 +8,6 @@ import { GamerModule } from '../gamer/gamer.module';
 import { AccountIdValidator } from 'src/utils/validators/account-id.validator';
 import { GameOverLogModule } from '../game-over-log/game-over-log.module';
 import { AuthModule } from '@ceresecosystem/ceres-lib/packages/ceres-backend-common';
-import { KeyValueDataModule } from '../key-value-data/key-value-data.module';
 import { GameInProgressValidator } from 'src/utils/validators/game-in-progress.validator';
 import { PlayerGameValidator } from 'src/utils/validators/player-game.validator';
 import { PlayerGameInProgressValidator } from 'src/utils/validators/player-game-in-progress.validator';
@@ -22,7 +21,6 @@ import { RewardsDistService } from './rewards-distributions.service';
     BlacklistedModule,
     GamerModule,
     GameOverLogModule,
-    KeyValueDataModule,
     ConfigModule,
     TypeOrmModule.forFeature([Game], 'pg'),
   ],
