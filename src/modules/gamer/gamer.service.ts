@@ -244,9 +244,7 @@ export class GamerService {
     gameResultList: EndGameResultDto[],
   ): Promise<void> {
     const updates = gameResultList.map((player) => {
-      const kd =
-        player.deaths === 0 ? player.kills : player.kills / player.deaths;
-      const pts = kd * 10;
+      const pts = Math.max(3 * player.kills - player.deaths, 0);
 
       return this.gamerRepo
         .createQueryBuilder()
