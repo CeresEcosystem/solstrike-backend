@@ -59,20 +59,15 @@ export class RewardsDistService {
       programDataInfo.data.subarray(programDataInfo.data.length - 32),
     );
 
-    const [firstPlace] = PublicKey.findProgramAddressSync(
-      [new PublicKey(accIds[0]).toBuffer()],
-      this.program.programId,
-    );
-
-    const [secondPlace] = PublicKey.findProgramAddressSync(
-      [new PublicKey(accIds[1]).toBuffer()],
-      this.program.programId,
-    );
-
-    const [thirdPlace] = PublicKey.findProgramAddressSync(
-      [new PublicKey(accIds[2]).toBuffer()],
-      this.program.programId,
-    );
+    const [firstPlaceAuthority, firstPlaceClaimableRewardsAccount]  = accIds[0] 
+      ? [new PublicKey(accIds[0]), this.findProgramAddress(accIds[0])] 
+      : [null, null];
+    const [secondPlaceAuthority, secondPlaceClaimableRewardsAccount] = accIds[1]
+      ? [new PublicKey(accIds[1]), this.findProgramAddress(accIds[1])]
+      : [null, null];
+    const [thirdPlaceAuthority, thirdPlaceClaimableRewardsAccount] = accIds[2]
+      ? [new PublicKey(accIds[2]), this.findProgramAddress(accIds[2])]
+      : [null, null];
 
     const distributeRewardsInstructions = await this.program.methods
       .setClaimableRewards()
@@ -80,12 +75,12 @@ export class RewardsDistService {
         signer: this.wallet.publicKey,
         program: this.program.programId,
         programData: programDataAccount,
-        firstPlaceClaimableRewardsAccount: firstPlace,
-        firstPlaceAuthority: new PublicKey(accIds[0]),
-        secondPlaceClaimableRewardsAccount: secondPlace,
-        secondPlaceAuthority: new PublicKey(accIds[1]),
-        thirdPlaceClaimableRewardsAccount: thirdPlace,
-        thirdPlaceAuthority: new PublicKey(accIds[2]),
+        firstPlaceClaimableRewardsAccount,
+        firstPlaceAuthority,
+        secondPlaceClaimableRewardsAccount,
+        secondPlaceAuthority,
+        thirdPlaceClaimableRewardsAccount,
+        thirdPlaceAuthority,
         systemProgram: SYSTEM_PROGRAM_ID,
       })
       .instruction();
@@ -107,5 +102,14 @@ export class RewardsDistService {
     );
 
     this.logger.log('✅ Rewards distributed!');
+  }
+
+  private findProgramAddress(accId: string): PublicKey {
+    const [account] = PublicKey.findProgramAddressSync(
+      [new PublicKey(accId).toBuffer()],
+      this.program.programId
+    );
+
+    return account;
   }
 }

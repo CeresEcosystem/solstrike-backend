@@ -60,10 +60,6 @@ export class GamerService {
   ): Promise<void> {
     const gamer = await this.gamerRepo.findOneByOrFail({ accountId });
 
-    if (gamer.reservedChips === 1) {
-      return;
-    }
-
     await this.gamerRepo
       .createQueryBuilder()
       .update()

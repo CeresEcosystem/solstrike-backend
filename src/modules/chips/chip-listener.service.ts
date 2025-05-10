@@ -36,11 +36,11 @@ export class ChipListenerService implements OnModuleInit {
 
     const program = new Program<SolStrike>(idl as SolStrike, provider);
 
-    program.addEventListener('reserveChipsEvent', (event, _slot) => {
+    program.addEventListener('reserveChipsEvent', async (event, _slot) => {
       const walletAccount = event.user.toBase58();
       const chipAmount = event.amount.toNumber() / Math.pow(10, 9);
 
-      this.gamerService.addReservedChips(walletAccount, chipAmount);
+      await this.gamerService.addReservedChips(walletAccount, chipAmount);
 
       this.logger.log(
         `ReserveChipsEvent: ${event.user.toBase58()} reserved ${chipAmount}`,

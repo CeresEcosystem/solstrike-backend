@@ -9,6 +9,9 @@ import { EndGameResultDto } from './dto/end-game-player-result.dto';
 import { RewardsDistService } from './rewards-distributions.service';
 import { GamerService } from '../gamer/gamer.service';
 
+const GAME_DURATION = 1000 * 60 * 5; // 5 minutes
+const GAME_PROCESSING_TIMEOUT = 1000 * 5; // 5 seconds
+
 @Injectable()
 export class EndGameProcessorService {
   private readonly logger = new Logger(EndGameProcessorService.name);
@@ -84,6 +87,15 @@ export class EndGameProcessorService {
       return;
     }
 
+    if (individualGameResults.length < 3) {
+      // If there are less than 3 players, we need to check if the game is still in progress
+      // and if it is, we need to wait for the game to finish
+
+      if (gameParties[0].createdAt.getTime() > (Date.now() - GAME_DURATION - GAME_PROCESSING_TIMEOUT)) {
+        return;
+      }
+    }
+
     this.logger.debug(`Processing game ${gameId}...`);
 
     // Hash results for easier management
@@ -122,19 +134,12 @@ export class EndGameProcessorService {
     }
 
     const gameResultList = hashedResults.get(topHashedResults[0]);
-
     this.logger.debug(`Result for game ${gameId}:`, gameResultList);
 
     const winnerAccountIds = this.winnersSort(gameResultList);
-
     this.logger.debug(`Winner(s) for game ${gameId} are ${winnerAccountIds}`);
 
-    this.logger.debug(
-      `Game Stats and Points for game ${gameId} distribution started`,
-    );
-
     await this.gamerService.distributeGameStatsAndPoints(gameResultList);
-
     this.logger.debug(
       `Game Stats and Points for game ${gameId} distribution finished`,
     );
@@ -144,7 +149,6 @@ export class EndGameProcessorService {
       winnerAccountIds,
       gameResultList,
     );
-
     await this.gameService.resolveGameProcessing(gameId);
 
     this.logger.debug(
