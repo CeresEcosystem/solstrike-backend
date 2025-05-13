@@ -51,25 +51,25 @@ export class GameOverLogService {
     gameId: string,
     reporterAccountId: string,
   ): Promise<EndGameResultDto[]> {
-    const individualGameResults = await this.gameOverIndividualLogRepo.findBy({
-      gameId,
-      reporterAccountId,
+    const individualGameResults = await this.gameOverIndividualLogRepo.find({
+      where: {
+        gameId,
+        reporterAccountId,
+      },
+      order: {
+        kills: 'DESC',
+        deaths: 'DESC',
+        headshots: 'DESC',
+        playerAccountId: 'DESC',
+      },
     });
 
-    return individualGameResults
-      .map((log) => ({
-        accountId: log.playerAccountId,
-        kills: log.kills,
-        deaths: log.deaths,
-        headshots: log.headshots,
-      }))
-      .sort((a, b) => {
-        if (b.kills !== a.kills) {
-          return b.kills - a.kills;
-        }
-
-        return a.deaths - b.deaths;
-      });
+    return individualGameResults.map((log) => ({
+      accountId: log.playerAccountId,
+      kills: log.kills,
+      deaths: log.deaths,
+      headshots: log.headshots,
+    }));
   }
 
   public async createLogsForGame(
