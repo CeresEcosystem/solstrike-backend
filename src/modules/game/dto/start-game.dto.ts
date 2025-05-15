@@ -4,6 +4,7 @@ import { IsAccountIdValid } from 'src/utils/validators/account-id.validator';
 export class StartGameDto {
   @IsNotEmpty()
   @IsAccountIdValid()
+  // @IsAccountNotInGame()
   accountId: string;
 
   @IsNotEmpty()

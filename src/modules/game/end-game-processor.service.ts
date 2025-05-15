@@ -55,7 +55,7 @@ export class EndGameProcessorService {
     }
   }
 
-  // eslint-disable-next-line max-lines-per-function
+  // eslint-disable-next-line max-lines-per-function, complexity
   private async processGameResults(
     gameId: string,
     gameParties: Game[],

@@ -8,6 +8,7 @@ import { hasDuplicates } from '@ceresecosystem/ceres-lib/packages/ceres-backend-
 import { StartGameDto } from './dto/start-game.dto';
 import isValidSignature from 'src/utils/signature.utils';
 import { EndGameDto } from './dto/end-game.dto';
+import { StatisticsDto } from './dto/statistics.dto';
 
 @Injectable()
 export class GameService {
@@ -19,6 +20,12 @@ export class GameService {
     private readonly gamerService: GamerService,
     private readonly gameOverLogService: GameOverLogService,
   ) {}
+
+  public isPlayerInActiveGame(accountId: string): Promise<boolean> {
+    return this.gameRepo.exists({
+      where: { resultsProcessed: false, accountId },
+    });
+  }
 
   public isPlayerInGame(gameId: string, accountId: string): Promise<boolean> {
     return this.gameRepo.exists({
@@ -107,6 +114,51 @@ export class GameService {
     );
   }
 
+  public async getStatistics(): Promise<StatisticsDto> {
+    const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
+
+    const stats = await Promise.all([
+      this.gameRepo
+        .createQueryBuilder('game')
+        .select('COUNT(DISTINCT game.hash)', 'count')
+        .where('game.resultsProcessed = :processed', { processed: false })
+        .getRawOne(),
+      this.gameRepo
+        .createQueryBuilder('game')
+        .select('COUNT(DISTINCT game.hash)', 'count')
+        .where('game.createdAt > :todayStart', { todayStart })
+        .getRawOne(),
+      this.gameRepo
+        .createQueryBuilder('game')
+        .select('COUNT(DISTINCT game.hash)', 'count')
+        .getRawOne(),
+      this.gameRepo
+        .createQueryBuilder('game')
+        .select('COUNT(DISTINCT game.accountId)', 'count')
+        .where('game.resultsProcessed = :processed', { processed: false })
+        .getRawOne(),
+      this.gameRepo
+        .createQueryBuilder('game')
+        .select('COUNT(DISTINCT game.accountId)', 'count')
+        .where('game.createdAt > :todayStart', { todayStart })
+        .getRawOne(),
+      this.gamerService.getGamersTotalCount(),
+    ]);
+
+    return {
+      games: {
+        countInProgress: Number(stats[0].count),
+        countToday: Number(stats[1].count),
+        countTotal: Number(stats[2].count),
+      },
+      players: {
+        countInProgress: Number(stats[3].count),
+        countToday: Number(stats[4].count),
+        countTotal: stats[5],
+      },
+    };
+  }
+
   private async verifySignature(
     signature: string,
     signedMessage: string,
@@ -149,11 +201,5 @@ export class GameService {
     const gameRows = await this.gameRepo.findBy({ gameId });
 
     return gameRows.map((game) => game.accountId);
-  }
-
-  private subSeconds(date: Date, seconds: number): Date {
-    date.setSeconds(date.getSeconds() - seconds);
-
-    return date;
   }
 }

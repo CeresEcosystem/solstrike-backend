@@ -28,6 +28,10 @@ export class GamerService {
     private readonly gamerLogRepo: Repository<GamerLog>,
   ) {}
 
+  public getGamersTotalCount(): Promise<number> {
+    return this.gamerRepo.count();
+  }
+
   public findByAccountIds(accountIds: string[]): Promise<Gamer[]> {
     return this.gamerRepo.findBy({ accountId: In(accountIds) });
   }
