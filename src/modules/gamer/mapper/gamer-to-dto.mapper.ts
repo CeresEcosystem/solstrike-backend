@@ -5,7 +5,7 @@ import { GamerDto } from '../dto/gamer-dto';
 import { Gamer } from '../entity/gamer.entity';
 
 export class GamerToDtoMapper extends BaseDtoMapper<Gamer, GamerDto> {
-  toDto(entity: Gamer): GamerDto {
+  toDto(entity: Gamer & { isInActiveGame?: boolean }): GamerDto {
     const {
       username,
       accountId,
@@ -26,6 +26,7 @@ export class GamerToDtoMapper extends BaseDtoMapper<Gamer, GamerDto> {
       reservedChips,
       points,
       party: partyCount,
+      isInActiveGame: entity.isInActiveGame,
     };
   }
 }

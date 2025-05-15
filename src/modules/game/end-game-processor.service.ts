@@ -8,9 +8,7 @@ import * as crypto from 'crypto';
 import { EndGameResultDto } from './dto/end-game-player-result.dto';
 import { RewardsDistService } from './rewards-distributions.service';
 import { GamerService } from '../gamer/gamer.service';
-
-const GAME_DURATION = 1000 * 60 * 5; // 5 minutes
-const GAME_PROCESSING_TIMEOUT = 1000 * 5; // 5 seconds
+import { GAME_DURATION, GAME_PROCESSING_TIMEOUT } from './game.const';
 
 @Injectable()
 export class EndGameProcessorService {

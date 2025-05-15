@@ -8,4 +8,5 @@ export interface GamerDto {
   reservedChips: number;
   points: number;
   party: number;
+  isInActiveGame: boolean;
 }

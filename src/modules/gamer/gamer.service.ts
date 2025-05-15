@@ -14,6 +14,8 @@ import { GamerLog } from './entity/gamer-log.entity';
 import isValidSignature from 'src/utils/signature.utils';
 import { EndGameResultDto } from '../game/dto/end-game-player-result.dto';
 import { GamerLeaderboardDto } from './dto/leaderboard.dto';
+import { Game } from '../game/entity/game.entity';
+import { GAME_DURATION, GAME_PROCESSING_TIMEOUT } from '../game/game.const';
 
 @Injectable()
 export class GamerService {
@@ -26,7 +28,23 @@ export class GamerService {
     private readonly gamerRepo: Repository<Gamer>,
     @InjectRepository(GamerLog, 'pg')
     private readonly gamerLogRepo: Repository<GamerLog>,
+    @InjectRepository(Game, 'pg')
+    private readonly gameRepo: Repository<Game>,
   ) {}
+
+  public isPlayerInActiveGame(accountId: string): Promise<boolean> {
+    const fiveMinutesAgo = new Date(
+      Date.now() - GAME_DURATION - GAME_PROCESSING_TIMEOUT,
+    );
+
+    return this.gameRepo.exists({
+      where: {
+        resultsProcessed: false,
+        accountId,
+        createdAt: MoreThan(fiveMinutesAgo),
+      },
+    });
+  }
 
   public getGamersTotalCount(): Promise<number> {
     return this.gamerRepo.count();
@@ -36,14 +54,19 @@ export class GamerService {
     return this.gamerRepo.findBy({ accountId: In(accountIds) });
   }
 
-  public async fetchOrCreate(accountId: string): Promise<Gamer> {
+  public async fetchOrCreate(
+    accountId: string,
+  ): Promise<Gamer & { isInActiveGame: boolean }> {
     const gamerExists = await this.gamerRepo.existsBy({ accountId });
 
     if (!gamerExists) {
       await this.gamerRepo.save({ accountId });
     }
 
-    return this.gamerRepo.findOneBy({ accountId });
+    const gamer = await this.gamerRepo.findOneBy({ accountId });
+    const isInActiveGame = await this.isPlayerInActiveGame(accountId);
+
+    return { ...gamer, isInActiveGame };
   }
 
   public async updateUsername(

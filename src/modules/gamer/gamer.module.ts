@@ -8,12 +8,13 @@ import { BlacklistedModule } from '../blacklisted/blacklisted.module';
 import { AccountIdValidator } from 'src/utils/validators/account-id.validator';
 import { GamerLog } from './entity/gamer-log.entity';
 import { AuthModule } from '@ceresecosystem/ceres-lib/packages/ceres-backend-common';
+import { Game } from '../game/entity/game.entity';
 
 @Module({
   imports: [
     AuthModule,
     BlacklistedModule,
-    TypeOrmModule.forFeature([Gamer, GamerLog], 'pg'),
+    TypeOrmModule.forFeature([Gamer, GamerLog, Game], 'pg'),
   ],
   controllers: [GamerController],
   providers: [GamerService, GamerToDtoMapper, AccountIdValidator],

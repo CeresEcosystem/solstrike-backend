@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { In, IsNull, Repository } from 'typeorm';
+import { In, IsNull, MoreThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GamerService } from '../gamer/gamer.service';
 import { Game } from './entity/game.entity';
@@ -9,6 +9,7 @@ import { StartGameDto } from './dto/start-game.dto';
 import isValidSignature from 'src/utils/signature.utils';
 import { EndGameDto } from './dto/end-game.dto';
 import { StatisticsDto } from './dto/statistics.dto';
+import { GAME_DURATION, GAME_PROCESSING_TIMEOUT } from './game.const';
 
 @Injectable()
 export class GameService {
@@ -22,8 +23,16 @@ export class GameService {
   ) {}
 
   public isPlayerInActiveGame(accountId: string): Promise<boolean> {
+    const fiveMinutesAgo = new Date(
+      Date.now() - GAME_DURATION - GAME_PROCESSING_TIMEOUT,
+    );
+
     return this.gameRepo.exists({
-      where: { resultsProcessed: false, accountId },
+      where: {
+        resultsProcessed: false,
+        accountId,
+        createdAt: MoreThan(fiveMinutesAgo),
+      },
     });
   }
 
@@ -116,12 +125,16 @@ export class GameService {
 
   public async getStatistics(): Promise<StatisticsDto> {
     const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
+    const fiveMinutesAgo = new Date(
+      Date.now() - GAME_DURATION - GAME_PROCESSING_TIMEOUT,
+    );
 
     const stats = await Promise.all([
       this.gameRepo
         .createQueryBuilder('game')
         .select('COUNT(DISTINCT game.hash)', 'count')
         .where('game.resultsProcessed = :processed', { processed: false })
+        .andWhere('game.createdAt > :fiveMinutesAgo', { fiveMinutesAgo })
         .getRawOne(),
       this.gameRepo
         .createQueryBuilder('game')
@@ -136,6 +149,7 @@ export class GameService {
         .createQueryBuilder('game')
         .select('COUNT(DISTINCT game.accountId)', 'count')
         .where('game.resultsProcessed = :processed', { processed: false })
+        .andWhere('game.createdAt > :fiveMinutesAgo', { fiveMinutesAgo })
         .getRawOne(),
       this.gameRepo
         .createQueryBuilder('game')
