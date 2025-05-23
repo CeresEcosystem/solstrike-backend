@@ -16,7 +16,7 @@ export class ChipListenerService implements OnModuleInit {
   constructor(private readonly gamerService: GamerService) {}
 
   async onModuleInit() {
-    this.connection = new Connection(clusterApiUrl('devnet'));
+    this.connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
 
     const payer = Keypair.generate();
 
