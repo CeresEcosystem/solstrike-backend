@@ -3,7 +3,7 @@ import { AnchorProvider, Program, Wallet } from '@coral-xyz/anchor';
 import { Connection, Keypair, clusterApiUrl } from '@solana/web3.js';
 import { GamerService } from '../gamer/gamer.service';
 
-import { SolStrike } from '../../utils/idl/sol_strike';
+import { SolStrike } from 'src/utils/idl/sol_strike';
 
 import * as fs from 'fs';
 import * as path from 'path';

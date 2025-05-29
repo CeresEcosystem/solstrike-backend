@@ -25,7 +25,7 @@ import {
   TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
-import { SolStrike } from '../../utils/idl/sol_strike';
+import { SolStrike } from 'src/utils/idl/sol_strike';
 import isValidSignature from 'src/utils/signature.utils';
 
 import * as fs from 'fs';
