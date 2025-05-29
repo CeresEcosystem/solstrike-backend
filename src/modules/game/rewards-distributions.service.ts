@@ -6,13 +6,17 @@ import {
   Transaction,
   clusterApiUrl,
 } from '@solana/web3.js';
-import { SolStrike } from '../../utils/idl/sol_strike';
+import { SolStrike } from 'src/utils/idl/sol_strike';
 import { ConfigService } from '@nestjs/config';
 import * as anchor from '@coral-xyz/anchor';
 import * as fs from 'fs';
 import * as path from 'path';
 import { AnchorProvider, Wallet, Program } from '@coral-xyz/anchor';
 import { SYSTEM_PROGRAM_ID } from '@coral-xyz/anchor/dist/cjs/native/system';
+import {
+  TOKEN_2022_PROGRAM_ID,
+  getAssociatedTokenAddress,
+} from '@solana/spl-token';
 
 @Injectable()
 export class RewardsDistService {
@@ -59,8 +63,8 @@ export class RewardsDistService {
       programDataInfo.data.subarray(programDataInfo.data.length - 32),
     );
 
-    const [firstPlaceAuthority, firstPlaceClaimableRewardsAccount]  = accIds[0] 
-      ? [new PublicKey(accIds[0]), this.findProgramAddress(accIds[0])] 
+    const [firstPlaceAuthority, firstPlaceClaimableRewardsAccount] = accIds[0]
+      ? [new PublicKey(accIds[0]), this.findProgramAddress(accIds[0])]
       : [null, null];
     const [secondPlaceAuthority, secondPlaceClaimableRewardsAccount] = accIds[1]
       ? [new PublicKey(accIds[1]), this.findProgramAddress(accIds[1])]
@@ -69,18 +73,39 @@ export class RewardsDistService {
       ? [new PublicKey(accIds[2]), this.findProgramAddress(accIds[2])]
       : [null, null];
 
+    const [chipMintPDA] = PublicKey.findProgramAddressSync(
+      [Buffer.from('CHIP_MINT')],
+      this.program.programId,
+    );
+
+    const [treasuryPDA] = PublicKey.findProgramAddressSync(
+      [Buffer.from('TREASURY')],
+      this.program.programId,
+    );
+
+    const treasuryChipTokenAccount = await getAssociatedTokenAddress(
+      chipMintPDA,
+      treasuryPDA,
+      true,
+      TOKEN_2022_PROGRAM_ID,
+    );
+
     const distributeRewardsInstructions = await this.program.methods
       .setClaimableRewards()
       .accountsStrict({
         signer: this.wallet.publicKey,
         program: this.program.programId,
         programData: programDataAccount,
+        chipMint: chipMintPDA,
+        treasury: treasuryPDA,
+        treasuryChipTokenAccount: treasuryChipTokenAccount,
         firstPlaceClaimableRewardsAccount,
         firstPlaceAuthority,
         secondPlaceClaimableRewardsAccount,
         secondPlaceAuthority,
         thirdPlaceClaimableRewardsAccount,
         thirdPlaceAuthority,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: SYSTEM_PROGRAM_ID,
       })
       .instruction();
@@ -107,7 +132,7 @@ export class RewardsDistService {
   private findProgramAddress(accId: string): PublicKey {
     const [account] = PublicKey.findProgramAddressSync(
       [new PublicKey(accId).toBuffer()],
-      this.program.programId
+      this.program.programId,
     );
 
     return account;
